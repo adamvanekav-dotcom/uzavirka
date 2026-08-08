@@ -2,22 +2,21 @@
 Loop: every 10m (568046)
 
 ## Fixed
-- [x] HQ floor + wall ceramic textures (512, grout, wet streaks)
-- [x] Realtime water shader + caustics + pool glow light
-- [x] Overlay vignette too dark → toned down
-- [x] Footsteps were UI blips → noise step SFX
-- [x] Interact markers (octahedrons) + hover emissive
-- [x] CRITICAL: canvas remount on every engine.emit
-- [x] Soft-gate wavepool requires turnstile
-- [x] Hide spent once-action markers
-- [x] Brighter ambient/hemi/moon + lobby lamps
-- [x] Wall tiles in lobby/lockers/kids/office
-- [x] Pool lane floats + depth markers
-- [x] Office CRT-ish monitor
+- [x] HQ floor + wall ceramic textures
+- [x] Realtime water shader + caustics
+- [x] Overlay vignette toned down
+- [x] Step SFX, interact markers, hover glow
+- [x] Canvas remount bug
+- [x] Soft-gate wavepool / hide spent markers
+- [x] Brighter lights + wall tiles rooms
+- [x] Pool floats, CRT, filtration detail
+- [x] Exit doors no longer solid colliders (ghost portals)
+- [x] Wet MeshPhysicalMaterial floors (clearcoat)
+- [x] Lobby props: bench, extinguisher, poster, plant
+- [x] Smaller player radius for less snagging
 
-## Next
-- Filtration denser pipes + warning signs
-- Wet MeshPhysicalMaterial where supported
-- Collision snags near door frames
-- Production visual QA screenshot
-- More unique props per room (not empty boxes)
+## Next ticks
+- Normal maps for tiles
+- More unique props lockers/pool
+- Collision QA doorways
+- Keep deploying

@@ -57,11 +57,14 @@ export class World {
   _matFloor() {
     const map = this.floorTex.clone();
     map.repeat.copy(this.floorTex.repeat);
-    return new THREE.MeshStandardMaterial({
+    return new THREE.MeshPhysicalMaterial({
       map,
-      roughness: 0.18,
-      metalness: 0.22,
-      envMapIntensity: 1.2,
+      roughness: 0.12,
+      metalness: 0.15,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.2,
+      reflectivity: 0.5,
+      envMapIntensity: 1.1,
     });
   }
 
@@ -165,16 +168,30 @@ export class World {
     mesh.userData.interactKind = kind;
     mesh.userData.baseEmissive = mesh.material?.emissive?.clone?.() || new THREE.Color(0x000000);
     mesh.userData.baseEmissiveIntensity = mesh.material?.emissiveIntensity ?? 0;
-    if (mesh.material && 'emissive' in mesh.material) {
+
+    if (kind === 'exit') {
+      // Door slabs must NOT block walking — they are teleport triggers
+      mesh.material = mesh.material.clone();
+      mesh.material.transparent = true;
+      mesh.material.opacity = 0.22;
+      mesh.material.depthWrite = false;
+      mesh.material.emissive = new THREE.Color(0x2a8090);
+      mesh.material.emissiveIntensity = 0.55;
+      mesh.castShadow = false;
+      const c = new THREE.Vector3();
+      mesh.updateMatrixWorld(true);
+      new THREE.Box3().setFromObject(mesh).getCenter(c);
+      this.colliders = this.colliders.filter((box) => box.getCenter(new THREE.Vector3()).distanceTo(c) > 0.45);
+    } else if (mesh.material && 'emissive' in mesh.material) {
       mesh.material.emissive = new THREE.Color(0x0a4050);
       mesh.material.emissiveIntensity = 0.2;
     }
-    // floating marker diamond
+
     const mark = new THREE.Mesh(
       new THREE.OctahedronGeometry(0.08, 0),
       new THREE.MeshStandardMaterial({
-        color: 0x7ef0f0,
-        emissive: 0x3ad0d0,
+        color: kind === 'exit' ? 0xa0ffe0 : 0x7ef0f0,
+        emissive: kind === 'exit' ? 0x40d0a0 : 0x3ad0d0,
         emissiveIntensity: 1.4,
         transparent: true,
         opacity: 0.85,
@@ -283,6 +300,28 @@ export class World {
     this._lamp(0, 4.7, 16, 0x98ffdd, 3.5);
     this._lamp(-3, 3.2, 14.5, 0xffe8b0, 2.4, 0.25);
     this._lamp(0, 4.5, 8, 0xaadfff, 3.0);
+
+    // lobby props — bench, extinguisher, poster, plant
+    this._box(2.2, 0.45, 0.7, this._matMetal(0x5a6a78), 6.5, 0.35, 10, { collide: false });
+    this._box(2.2, 0.08, 0.7, new THREE.MeshStandardMaterial({ color: 0x2a3038 }), 6.5, 0.6, 10, { collide: false });
+    const extinguisher = this._box(0.22, 0.55, 0.22, new THREE.MeshStandardMaterial({ color: 0xb02020, roughness: 0.4, metalness: 0.3 }), -8.5, 1.0, 18.5, { collide: false });
+    extinguisher.material.emissive = new THREE.Color(0x400000);
+    extinguisher.material.emissiveIntensity = 0.15;
+    const poster = this._box(1.4, 1.0, 0.04, new THREE.MeshStandardMaterial({ color: 0xd8c090, roughness: 0.65 }), 9.7, 2.0, 10, { collide: false });
+    poster.rotation.y = -Math.PI / 2;
+    // plant
+    const pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.2, 0.35, 10),
+      new THREE.MeshStandardMaterial({ color: 0x6a4a32 }),
+    );
+    pot.position.set(8.5, 0.2, 18.5);
+    this.group.add(pot);
+    const bush = new THREE.Mesh(
+      new THREE.SphereGeometry(0.45, 10, 8),
+      new THREE.MeshStandardMaterial({ color: 0x1e6a3a, flatShading: true }),
+    );
+    bush.position.set(8.5, 0.7, 18.5);
+    this.group.add(bush);
   }
 
   _doorFrame(x, z, w, h, rotY = 0) {

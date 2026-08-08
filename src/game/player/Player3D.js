@@ -15,7 +15,7 @@ export class Player3D {
     this.sensitivity = 0.002;
     this.eyeHeight = 1.65;
     this.baseY = 0;
-    this.radius = 0.35;
+    this.radius = 0.28;
     this.speed = 4.2;
     this.sprintMul = 1.55;
     this.stamina = 100;

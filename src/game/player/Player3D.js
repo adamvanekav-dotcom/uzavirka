@@ -25,7 +25,7 @@ export class Player3D {
     this.hovered = null;
     this.colliders = [];
 
-    this.flashlight = new THREE.SpotLight(0xfff2d6, 14, 32, Math.PI / 5, 0.35, 1);
+    this.flashlight = new THREE.SpotLight(0xffe8c8, 22, 28, Math.PI / 6.5, 0.28, 1.1);
     this.flashlight.castShadow = true;
     this.flashlight.shadow.mapSize.set(1024, 1024);
     this.flashTarget = new THREE.Object3D();

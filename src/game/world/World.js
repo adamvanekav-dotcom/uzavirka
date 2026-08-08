@@ -177,19 +177,28 @@ export class World {
   }
 
   _lamp(x, y, z, color = 0xaaccff, intensity = 2.2, size = 0.35) {
+    // recessed can
+    const can = new THREE.Mesh(
+      new THREE.CylinderGeometry(size * 0.7, size * 0.85, 0.18, 16),
+      this._matMetal(0x2a323c),
+    );
+    can.position.set(x, y + 0.05, z);
+    this.group.add(can);
     const bulb = new THREE.Mesh(
-      new THREE.BoxGeometry(size * 2.2, 0.08, size),
+      new THREE.CircleGeometry(size * 0.55, 16),
       new THREE.MeshStandardMaterial({
         color,
         emissive: color,
-        emissiveIntensity: 2.5,
-        roughness: 0.4,
+        emissiveIntensity: 3.2,
+        roughness: 0.3,
+        side: THREE.DoubleSide,
       }),
     );
-    bulb.position.set(x, y, z);
+    bulb.rotation.x = Math.PI / 2;
+    bulb.position.set(x, y - 0.02, z);
     this.group.add(bulb);
     const l = new THREE.PointLight(color, intensity, 18, 1.4);
-    l.position.set(x, y - 0.15, z);
+    l.position.set(x, y - 0.2, z);
     l.userData.baseIntensity = intensity;
     this.group.add(l);
     this.dynamicLights.push(l);
@@ -222,13 +231,13 @@ export class World {
     }
 
     const mark = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.08, 0),
+      new THREE.OctahedronGeometry(0.06, 0),
       new THREE.MeshStandardMaterial({
         color: kind === 'exit' ? 0xa0ffe0 : 0x7ef0f0,
         emissive: kind === 'exit' ? 0x40d0a0 : 0x3ad0d0,
-        emissiveIntensity: 1.4,
+        emissiveIntensity: 1.2,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.7,
       }),
     );
     const box = new THREE.Box3().setFromObject(mesh);
@@ -329,8 +338,17 @@ export class World {
     const vending = this._box(1.15, 2.1, 0.75, this._matMetal(0x556677), 7.5, 1.05, 16);
     this._interact(vending, 'lobby_vending', 'Kopnout do automatu');
 
-    const turn = this._box(1.6, 1.15, 0.35, this._matMetal(0xaabbcc), 0, 0.57, 8.2);
-    this._interact(turn, 'lobby_turnstile', 'Projít turniketem s kartou');
+    const turnBase = this._box(0.35, 1.05, 0.35, this._matMetal(0x667788), 0, 0.52, 8.2);
+    for (let i = 0; i < 3; i++) {
+      const arm = this._box(1.4, 0.06, 0.06, this._matMetal(0xaabbcc), 0.55, 0.85, 8.2, { collide: false });
+      arm.rotation.y = (i * Math.PI * 2) / 3;
+      arm.position.set(
+        Math.cos((i * Math.PI * 2) / 3) * 0.55,
+        0.85,
+        8.2 + Math.sin((i * Math.PI * 2) / 3) * 0.55,
+      );
+    }
+    this._interact(turnBase, 'lobby_turnstile', 'Projít turniketem s kartou');
 
     const toLockers = this._box(1.7, 2.3, 0.12, this._matMetal(0x779999), -9.85, 1.15, 12);
     this._interact(toLockers, 'lockers', 'Do šaten', 'exit');
@@ -347,8 +365,30 @@ export class World {
     this._lamp(-3, 3.0, 14.5, 0xffd090, 1.6, 0.25);
     this._lamp(0, 4.5, 8, 0x88b8d8, 2.0);
 
-    // lobby props — bench, extinguisher, poster, plant
-    this._box(2.2, 0.45, 0.7, this._matMetal(0x5a6a78), 6.5, 0.35, 10, { collide: false });
+    // wall dirt / water stains
+    for (const [x, y, z, ry] of [
+      [-9.78, 1.2, 11, Math.PI / 2],
+      [9.78, 1.5, 15, -Math.PI / 2],
+      [2, 0.8, 19.78, Math.PI],
+    ]) {
+      const stain = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.8, 1.2),
+        new THREE.MeshStandardMaterial({
+          color: 0x1a2830,
+          transparent: true,
+          opacity: 0.35,
+          roughness: 1,
+          depthWrite: false,
+        }),
+      );
+      stain.position.set(x, y, z);
+      stain.rotation.y = ry;
+      this.group.add(stain);
+    }
+    // ceiling cornice
+    this._box(19.6, 0.12, 0.18, this._matMetal(0x556670), 0, 4.85, 12, { collide: false });
+    this._box(0.18, 0.12, 15.5, this._matMetal(0x556670), -9.8, 4.85, 12, { collide: false });
+    this._box(0.18, 0.12, 15.5, this._matMetal(0x556670), 9.8, 4.85, 12, { collide: false });
     this._box(2.2, 0.08, 0.7, new THREE.MeshStandardMaterial({ color: 0x2a3038 }), 6.5, 0.6, 10, { collide: false });
     const extinguisher = this._box(0.22, 0.55, 0.22, new THREE.MeshStandardMaterial({ color: 0xb02020, roughness: 0.4, metalness: 0.3 }), -8.5, 1.0, 18.5, { collide: false });
     extinguisher.material.emissive = new THREE.Color(0x400000);
@@ -840,7 +880,9 @@ export class World {
       if (engine) {
         const id = obj.userData.interactId;
         const spent = engine.flag(`done_${id}`);
-        m.visible = !spent;
+        const dist = playerPos ? playerPos.distanceTo(m.position) : 99;
+        const near = dist < 5.5;
+        m.visible = !spent && near;
         obj.visible = obj.userData.interactKind === 'exit' ? true : !spent;
       }
     }

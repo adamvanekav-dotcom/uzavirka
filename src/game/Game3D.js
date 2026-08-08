@@ -21,7 +21,7 @@ export class Game3D {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.55;
+    this.renderer.toneMappingExposure = 1.15;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -34,6 +34,26 @@ export class Game3D {
     this.player.euler.set(0, Math.PI, 0);
     this.player.syncCamera();
     this.overlayMat = createOverlayPass(this.camera);
+
+    // Environment reflections for wet tiles / metal
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const envScene = new THREE.Scene();
+    envScene.background = new THREE.Color(0x102838);
+    envScene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const e1 = new THREE.Mesh(
+      new THREE.SphereGeometry(8, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x4ad0e0, side: THREE.BackSide }),
+    );
+    envScene.add(e1);
+    const e2 = new THREE.Mesh(
+      new THREE.SphereGeometry(3, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffcc88 }),
+    );
+    e2.position.set(4, -2, -3);
+    envScene.add(e2);
+    this.scene.environment = pmrem.fromScene(envScene, 0.04).texture;
+    pmrem.dispose();
+    this.renderer.toneMappingExposure = 1.35;
 
     this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;

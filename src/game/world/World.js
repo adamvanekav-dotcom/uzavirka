@@ -26,15 +26,34 @@ export class World {
     this.group = new THREE.Group();
     this.scene.add(this.group);
 
-    this.floorTex = makeFloorTile(512);
+    const floor = makeFloorTile(512);
+    this.floorTex = floor.map;
+    this.floorNormal = floor.normalMap;
     this.floorTex.repeat.set(8, 8);
-    this.wallTex = makeWallTile(512);
+    this.floorNormal.repeat.set(8, 8);
+
+    const wall = makeWallTile(512);
+    this.wallTex = wall.map;
+    this.wallNormal = wall.normalMap;
     this.wallTex.repeat.set(4, 2);
-    this.concreteTex = makeConcrete(512);
+    this.wallNormal.repeat.set(4, 2);
+
+    const concrete = makeConcrete(512);
+    this.concreteTex = concrete.map;
+    this.concreteNormal = concrete.normalMap;
     this.concreteTex.repeat.set(6, 6);
-    this.metalTex = makeMetal(256);
-    this.plasterTex = makePlaster(256);
+    this.concreteNormal.repeat.set(6, 6);
+
+    const metal = makeMetal(256);
+    this.metalTex = metal.map;
+    this.metalNormal = metal.normalMap;
+
+    const plaster = makePlaster(256);
+    this.plasterTex = plaster.map;
+    this.plasterNormal = plaster.normalMap;
     this.plasterTex.repeat.set(3, 3);
+    this.plasterNormal.repeat.set(3, 3);
+
     this.neonTex = makeNeonSign('ATLANTIS WAVE', 1024);
   }
 
@@ -56,49 +75,64 @@ export class World {
 
   _matFloor() {
     const map = this.floorTex.clone();
+    const normalMap = this.floorNormal.clone();
     map.repeat.copy(this.floorTex.repeat);
+    normalMap.repeat.copy(this.floorNormal.repeat);
     return new THREE.MeshPhysicalMaterial({
       map,
-      roughness: 0.12,
-      metalness: 0.15,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.2,
-      reflectivity: 0.5,
-      envMapIntensity: 1.1,
+      normalMap,
+      normalScale: new THREE.Vector2(1.1, 1.1),
+      roughness: 0.1,
+      metalness: 0.12,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.15,
+      reflectivity: 0.55,
+      envMapIntensity: 1.35,
     });
   }
 
   _matWall() {
     const map = this.wallTex.clone();
+    const normalMap = this.wallNormal.clone();
     map.repeat.copy(this.wallTex.repeat);
+    normalMap.repeat.copy(this.wallNormal.repeat);
     return new THREE.MeshStandardMaterial({
       map,
-      roughness: 0.35,
-      metalness: 0.08,
+      normalMap,
+      normalScale: new THREE.Vector2(0.9, 0.9),
+      roughness: 0.32,
+      metalness: 0.06,
+      envMapIntensity: 0.9,
     });
   }
 
   _matConcrete() {
     return new THREE.MeshStandardMaterial({
       map: this.concreteTex,
-      roughness: 0.82,
+      normalMap: this.concreteNormal,
+      normalScale: new THREE.Vector2(0.7, 0.7),
+      roughness: 0.78,
       metalness: 0.04,
+      envMapIntensity: 0.6,
     });
   }
 
   _matMetal(color = 0x9aabbb) {
     return new THREE.MeshStandardMaterial({
       map: this.metalTex,
+      normalMap: this.metalNormal,
       color,
-      roughness: 0.28,
-      metalness: 0.92,
+      roughness: 0.26,
+      metalness: 0.95,
+      envMapIntensity: 1.4,
     });
   }
 
   _matPlaster() {
     return new THREE.MeshStandardMaterial({
       map: this.plasterTex,
-      roughness: 0.9,
+      normalMap: this.plasterNormal,
+      roughness: 0.88,
       metalness: 0.02,
     });
   }
@@ -346,11 +380,19 @@ export class World {
     this._lamp(-16, 3.9, 12, 0xaaccff, 3.2);
     this._lamp(-19, 3.5, 10, 0x88ffaa, 1.8);
 
-    // locker bank
-    for (let i = 0; i < 8; i++) {
-      const lx = -20 + (i % 2) * 1.1;
-      const lz = 8 + Math.floor(i / 2) * 1.3;
-      const locker = this._box(1, 2.2, 0.55, this._matMetal(0x3a4a55), lx, 1.1, lz);
+      // locker bank — numbered doors with handles
+    for (let i = 0; i < 10; i++) {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const lx = -20.2 + col * 1.15;
+      const lz = 7.6 + row * 1.35;
+      const locker = this._box(1.05, 2.15, 0.5, this._matMetal(0x3e4e5a), lx, 1.1, lz);
+      this._box(0.06, 0.35, 0.08, this._matMetal(0xc0d0e0), lx + 0.4, 1.1, lz + 0.28, { collide: false });
+      const num = this._box(0.28, 0.18, 0.02, new THREE.MeshStandardMaterial({
+        color: 0xe8f0ff,
+        emissive: 0x445566,
+        emissiveIntensity: 0.3,
+      }), lx, 1.85, lz + 0.27, { collide: false });
       if (i === 3) this._interact(locker, 'lockers_117', 'Otevřít skříňku 117');
     }
 
@@ -434,6 +476,28 @@ export class World {
     this._lamp(-6, 3.5, -14, 0x44ffaa, 2.2);
     this._lamp(6, 3.5, -14, 0x44ffaa, 2.2);
     this._lamp(-4, 1.2, -16, 0xff6644, 1.4, 0.2);
+
+    // steam / mist near water surface
+    const steamGeo = new THREE.BufferGeometry();
+    const sc = 120;
+    const spos = new Float32Array(sc * 3);
+    for (let i = 0; i < sc; i++) {
+      spos[i * 3] = (Math.random() - 0.5) * 14;
+      spos[i * 3 + 1] = 0.4 + Math.random() * 1.2;
+      spos[i * 3 + 2] = -13 + (Math.random() - 0.5) * 14;
+    }
+    steamGeo.setAttribute('position', new THREE.BufferAttribute(spos, 3));
+    this.steam = new THREE.Points(
+      steamGeo,
+      new THREE.PointsMaterial({
+        color: 0xaad8e0,
+        size: 0.22,
+        transparent: true,
+        opacity: 0.22,
+        depthWrite: false,
+      }),
+    );
+    this.group.add(this.steam);
 
     // lane ropes / float line
     for (let i = 0; i < 12; i++) {
@@ -734,6 +798,15 @@ export class World {
       }
     }
     if (this.dust) this.dust.rotation.y = t * 0.02;
+    if (this.steam) {
+      this.steam.rotation.y = t * 0.05;
+      const arr = this.steam.geometry.attributes.position.array;
+      for (let i = 0; i < arr.length; i += 3) {
+        arr[i + 1] += Math.sin(t + i) * 0.0015;
+        if (arr[i + 1] > 2.2) arr[i + 1] = 0.35;
+      }
+      this.steam.geometry.attributes.position.needsUpdate = true;
+    }
     for (const obj of this.interactables) {
       const m = obj.userData.marker;
       if (!m) continue;

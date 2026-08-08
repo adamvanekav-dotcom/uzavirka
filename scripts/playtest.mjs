@@ -103,7 +103,7 @@ function pathEscape() {
 function pathGates() {
   const e = new Engine(story, new FakeAudio());
   e.startFresh();
-  e.go('lobby');
+  // start in lobby now
   const before = e.getView().exits.map((x) => x.to);
   assert(!before.includes('wavepool'), 'wavepool should be gated');
   e.doAction('lobby_drawer');

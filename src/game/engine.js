@@ -2,7 +2,7 @@ const SAVE_KEY = 'uzavirka_save_v1';
 
 export function createInitialState() {
   return {
-    location: 'parking',
+    location: 'lobby',
     inventory: [],
     flags: {},
     docs: [],
@@ -55,7 +55,7 @@ export class Engine {
     this.state = createInitialState();
     this._startClock();
     this.audio.setTension(this.state.tension);
-    this._pushLog('Parkoviště. 23:12. Zítra buldozery.');
+    this._pushLog('Vstupní hala. Chlor, ticho, zelené nouzové světlo.');
     this.emit();
   }
 
@@ -111,12 +111,12 @@ export class Engine {
     this._tickTimer = setInterval(() => {
       if (this.state.ending) return;
       this.state.minutesPlayed = Math.floor((Date.now() - this.state.startedAt) / 60000);
-      // Soft tension drift over time in later chapters
       if (this.state.chapter >= 2 && this.state.tension < 0.85) {
         this.state.tension = Math.min(0.85, this.state.tension + 0.002);
         this.audio.setTension(this.state.tension);
       }
     }, 15000);
+    if (typeof this._tickTimer.unref === 'function') this._tickTimer.unref();
   }
 
   _pushLog(text) {

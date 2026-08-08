@@ -21,7 +21,7 @@ export class Game3D {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.35;
+    this.renderer.toneMappingExposure = 1.55;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -132,7 +132,7 @@ export class Game3D {
       } else {
         // allow free roam between connected zones if story exit not listed from current — soft gate
         const softGates = {
-          wavepool: () => this.engine.flag('turnstile_ok') || this.engine.flag('got_badge'),
+          wavepool: () => this.engine.flag('turnstile_ok'),
           lockers: () => this.engine.flag('got_badge'),
           tower: () => this.engine.flag('saw_grate'),
           kids: () => this.engine.flag('found_locker'),

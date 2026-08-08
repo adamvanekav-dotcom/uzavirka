@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import {
-  makeTileTexture,
-  makeConcreteTexture,
-  makeMetalTexture,
-  makeNeonSignTexture,
+  makeFloorTile,
+  makeWallTile,
+  makeConcrete,
+  makeMetal,
+  makeNeonSign,
+  makePlaster,
 } from './textures.js';
-import { createWater } from './water.js';
+import { createWater, updateWater } from './water.js';
 import { createWatcher, updateWatcher } from './Watcher.js';
 
 /**
@@ -24,12 +26,16 @@ export class World {
     this.group = new THREE.Group();
     this.scene.add(this.group);
 
-    this.tileTex = makeTileTexture();
-    this.tileTex.repeat.set(10, 10);
-    this.concreteTex = makeConcreteTexture();
-    this.concreteTex.repeat.set(14, 14);
-    this.metalTex = makeMetalTexture();
-    this.neonTex = makeNeonSignTexture('ATLANTIS WAVE');
+    this.floorTex = makeFloorTile(512);
+    this.floorTex.repeat.set(8, 8);
+    this.wallTex = makeWallTile(512);
+    this.wallTex.repeat.set(4, 2);
+    this.concreteTex = makeConcrete(512);
+    this.concreteTex.repeat.set(6, 6);
+    this.metalTex = makeMetal(256);
+    this.plasterTex = makePlaster(256);
+    this.plasterTex.repeat.set(3, 3);
+    this.neonTex = makeNeonSign('ATLANTIS WAVE', 1024);
   }
 
   build() {
@@ -48,31 +54,55 @@ export class World {
     return this;
   }
 
-  _matTile() {
-    const map = this.tileTex.clone();
-    map.repeat.copy(this.tileTex.repeat);
+  _matFloor() {
+    const map = this.floorTex.clone();
+    map.repeat.copy(this.floorTex.repeat);
     return new THREE.MeshStandardMaterial({
       map,
-      roughness: 0.2,
-      metalness: 0.18,
+      roughness: 0.18,
+      metalness: 0.22,
+      envMapIntensity: 1.2,
+    });
+  }
+
+  _matWall() {
+    const map = this.wallTex.clone();
+    map.repeat.copy(this.wallTex.repeat);
+    return new THREE.MeshStandardMaterial({
+      map,
+      roughness: 0.35,
+      metalness: 0.08,
     });
   }
 
   _matConcrete() {
     return new THREE.MeshStandardMaterial({
       map: this.concreteTex,
-      roughness: 0.78,
-      metalness: 0.06,
+      roughness: 0.82,
+      metalness: 0.04,
     });
   }
 
-  _matMetal(color = 0x8a9aaa) {
+  _matMetal(color = 0x9aabbb) {
     return new THREE.MeshStandardMaterial({
       map: this.metalTex,
       color,
-      roughness: 0.32,
-      metalness: 0.88,
+      roughness: 0.28,
+      metalness: 0.92,
     });
+  }
+
+  _matPlaster() {
+    return new THREE.MeshStandardMaterial({
+      map: this.plasterTex,
+      roughness: 0.9,
+      metalness: 0.02,
+    });
+  }
+
+  /** @deprecated use _matFloor */
+  _matTile() {
+    return this._matFloor();
   }
 
   _box(w, h, d, mat, x, y, z, opts = {}) {
@@ -133,50 +163,51 @@ export class World {
     mesh.userData.interactId = id;
     mesh.userData.interactLabel = label;
     mesh.userData.interactKind = kind;
-    this.interactables.push(mesh);
-    if (mesh.material?.emissive) {
-      mesh.material.emissive = new THREE.Color(0x0a3540);
-      mesh.material.emissiveIntensity = 0.35;
+    mesh.userData.baseEmissive = mesh.material?.emissive?.clone?.() || new THREE.Color(0x000000);
+    mesh.userData.baseEmissiveIntensity = mesh.material?.emissiveIntensity ?? 0;
+    if (mesh.material && 'emissive' in mesh.material) {
+      mesh.material.emissive = new THREE.Color(0x0a4050);
+      mesh.material.emissiveIntensity = 0.2;
     }
+    // floating marker diamond
+    const mark = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.08, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0x7ef0f0,
+        emissive: 0x3ad0d0,
+        emissiveIntensity: 1.4,
+        transparent: true,
+        opacity: 0.85,
+      }),
+    );
+    const box = new THREE.Box3().setFromObject(mesh);
+    const c = new THREE.Vector3();
+    box.getCenter(c);
+    mark.position.set(c.x, box.max.y + 0.25, c.z);
+    mark.userData.markerFor = id;
+    this.group.add(mark);
+    mesh.userData.marker = mark;
+    this.interactables.push(mesh);
     return mesh;
   }
 
   _lighting() {
-    this.scene.background = new THREE.Color(0x071018);
-    this.scene.fog = new THREE.FogExp2(0x0a1822, 0.012);
+    this.scene.background = new THREE.Color(0x0a1520);
+    this.scene.fog = new THREE.FogExp2(0x0c1a24, 0.008);
 
-    this.scene.add(new THREE.AmbientLight(0x4a6a7a, 0.85));
-    const hemi = new THREE.HemisphereLight(0x8ab0c8, 0x1a1010, 0.55);
-    this.scene.add(hemi);
+    this.scene.add(new THREE.AmbientLight(0x6a8a9a, 1.05));
+    this.scene.add(new THREE.HemisphereLight(0xb0d0e8, 0x2a1810, 0.75));
 
-    const moon = new THREE.DirectionalLight(0xc0d8ee, 1.1);
-    moon.position.set(-25, 45, 12);
+    const moon = new THREE.DirectionalLight(0xd0e4f8, 1.35);
+    moon.position.set(-20, 50, 18);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
-    moon.shadow.camera.left = -50;
-    moon.shadow.camera.right = 50;
-    moon.shadow.camera.top = 50;
-    moon.shadow.camera.bottom = -50;
+    moon.shadow.camera.left = -55;
+    moon.shadow.camera.right = 55;
+    moon.shadow.camera.top = 55;
+    moon.shadow.camera.bottom = -55;
+    moon.shadow.bias = -0.0002;
     this.scene.add(moon);
-
-    const spots = [
-      [0, 5.5, 24, 0xffe6bb, 2.5],
-      [-6, 3.2, 12, 0x66ffaa, 1.4],
-      [6, 3.2, 12, 0x66ffaa, 1.4],
-      [0, 3.5, 12, 0xaaccff, 1.8],
-      [0, 2.8, -14, 0x3ad0d8, 4.5],
-      [-16, 2.8, 12, 0x88aacc, 1.6],
-      [16, 7.5, -12, 0xffcc88, 2.0],
-      [8, 2.5, -28, 0xffdd99, 1.5],
-      [14, 2.5, -4, 0x88ffcc, 1.2],
-      [0, -1.2, -14, 0xff7733, 2.2],
-    ];
-    for (const [x, y, z, c, i] of spots) {
-      const l = new THREE.PointLight(c, i, 22, 1.6);
-      l.position.set(x, y, z);
-      this.group.add(l);
-      this.dynamicLights.push(l);
-    }
   }
 
   _parkingAndLobby() {
@@ -185,16 +216,22 @@ export class World {
 
     this._floor(36, 20, 0, this._matConcrete(), 0, 24);
 
-    // lobby room open toward pool (-z)
-    const wall = this._matConcrete();
-    this._floor(20, 16, 0.01, this._matTile(), 0, 12);
+    const wall = this._matWall();
+    this._floor(20, 16, 0.01, this._matFloor(), 0, 12);
     this._box(20, 5, 0.4, wall, 0, 2.5, 20);
     this._box(0.4, 5, 16, wall, -10, 2.5, 12);
     this._box(0.4, 5, 16, wall, 10, 2.5, 12);
-    // partial south wall with opening
     this._box(7, 5, 0.4, wall, -6.5, 2.5, 4);
     this._box(7, 5, 0.4, wall, 6.5, 2.5, 4);
-    this._box(20, 0.3, 16, new THREE.MeshStandardMaterial({ color: 0x0b1218 }), 0, 5, 12, { collide: false });
+    this._box(20, 0.3, 16, this._matPlaster(), 0, 5, 12, { collide: false });
+
+    // skirting boards
+    this._box(20, 0.12, 0.08, this._matMetal(0x667788), 0, 0.06, 19.78, { collide: false });
+    this._box(20, 0.12, 0.08, this._matMetal(0x667788), 0, 0.06, 4.22, { collide: false });
+
+    // door frames
+    this._doorFrame(0, 4.15, 2.8, 2.6);
+    this._doorFrame(-9.85, 12, 1.8, 2.4, Math.PI / 2);
 
     const sign = new THREE.Mesh(
       new THREE.PlaneGeometry(9, 1.5),
@@ -202,60 +239,73 @@ export class World {
         map: this.neonTex,
         emissiveMap: this.neonTex,
         emissive: 0xffffff,
-        emissiveIntensity: 1.35,
+        emissiveIntensity: 1.6,
       }),
     );
     sign.position.set(0, 4.3, 20.25);
     sign.rotation.y = Math.PI;
     this.group.add(sign);
 
-    const desk = this._box(4.2, 1.05, 1.1, this._matMetal(0x6a7a88), -3.2, 0.52, 14.5);
+    const desk = this._box(4.2, 1.05, 1.1, this._matMetal(0x7a8a98), -3.2, 0.52, 14.5);
+    // desk top detail
+    this._box(4.3, 0.06, 1.2, this._matMetal(0xa0b0c0), -3.2, 1.08, 14.5, { collide: false });
     this._interact(desk, 'lobby_drawer', 'Otevřít šuplík u recepce');
 
-    const flyer = this._box(0.35, 0.02, 0.28, new THREE.MeshStandardMaterial({ color: 0xd4c48a }), -2.2, 1.08, 14.5);
+    const flyer = this._box(0.35, 0.02, 0.28, new THREE.MeshStandardMaterial({ color: 0xe8d9a0, roughness: 0.55 }), -2.2, 1.12, 14.5);
     this._interact(flyer, 'lobby_flyer', 'Sebrat leták');
 
-    const book = this._box(0.45, 0.07, 0.32, new THREE.MeshStandardMaterial({ color: 0x5a3040 }), -1.2, 1.08, 14.5);
+    const book = this._box(0.45, 0.07, 0.32, new THREE.MeshStandardMaterial({ color: 0x6a3040, roughness: 0.7 }), -1.2, 1.12, 14.5);
     this._interact(book, 'lobby_guest_book', 'Otevřít knihu přání');
 
-    const batt = this._box(0.22, 0.08, 0.14, new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x145214, emissiveIntensity: 0.5 }), -3.9, 1.08, 14.5);
+    const batt = this._box(0.22, 0.08, 0.14, new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x1a6a1a, emissiveIntensity: 0.7 }), -3.9, 1.12, 14.5);
     this._interact(batt, 'lobby_batteries_fix', 'Vzít baterie');
 
-    const mapBoard = this._box(2.4, 1.5, 0.08, this._matMetal(0x334455), 5, 1.9, 4.3);
+    const mapBoard = this._box(2.4, 1.5, 0.08, this._matMetal(0x445566), 5, 1.9, 4.3);
     this._interact(mapBoard, 'lobby_map', 'Prohlédnout mapu areálu');
 
-    const vending = this._box(1.15, 2.1, 0.75, this._matMetal(0x445566), 7.5, 1.05, 16);
+    const vending = this._box(1.15, 2.1, 0.75, this._matMetal(0x556677), 7.5, 1.05, 16);
     this._interact(vending, 'lobby_vending', 'Kopnout do automatu');
 
-    const turn = this._box(1.6, 1.15, 0.35, this._matMetal(0x99aabb), 0, 0.57, 8.2);
+    const turn = this._box(1.6, 1.15, 0.35, this._matMetal(0xaabbcc), 0, 0.57, 8.2);
     this._interact(turn, 'lobby_turnstile', 'Projít turniketem s kartou');
 
-    const toLockers = this._box(1.7, 2.3, 0.12, this._matMetal(0x668888), -9.85, 1.15, 12);
+    const toLockers = this._box(1.7, 2.3, 0.12, this._matMetal(0x779999), -9.85, 1.15, 12);
     this._interact(toLockers, 'lockers', 'Do šaten', 'exit');
 
-    const toPool = this._box(2.8, 2.5, 0.1, this._matMetal(0x557788), 0, 1.25, 4.15);
+    const toPool = this._box(2.8, 2.5, 0.1, this._matMetal(0x668899), 0, 1.25, 4.15);
     this._interact(toPool, 'wavepool', 'K vlnovému bazénu', 'exit');
 
-    const toParking = this._box(2.2, 2.5, 0.1, this._matMetal(0x556677), 0, 1.25, 19.75);
+    const toParking = this._box(2.2, 2.5, 0.1, this._matMetal(0x667788), 0, 1.25, 19.75);
     this._interact(toParking, 'parking', 'Zpět na parkoviště', 'exit');
 
-    this._lamp(-4, 4.7, 12, 0xb8dfff, 3.2);
-    this._lamp(4, 4.7, 12, 0xb8dfff, 3.2);
-    this._lamp(0, 4.7, 16, 0x88ffcc, 2.4);
-    this._lamp(-3, 3.2, 14.5, 0xffe0a0, 1.8, 0.25);
+    this._lamp(-4, 4.7, 12, 0xc8e8ff, 4.5);
+    this._lamp(4, 4.7, 12, 0xc8e8ff, 4.5);
+    this._lamp(0, 4.7, 16, 0x98ffdd, 3.5);
+    this._lamp(-3, 3.2, 14.5, 0xffe8b0, 2.4, 0.25);
+    this._lamp(0, 4.5, 8, 0xaadfff, 3.0);
+  }
+
+  _doorFrame(x, z, w, h, rotY = 0) {
+    const m = this._matMetal(0x8899aa);
+    const t = 0.08;
+    const left = this._box(t, h, t, m, x - w / 2, h / 2, z, { collide: false });
+    const right = this._box(t, h, t, m, x + w / 2, h / 2, z, { collide: false });
+    const top = this._box(w + t * 2, t, t, m, x, h, z, { collide: false });
+    left.rotation.y = right.rotation.y = top.rotation.y = rotY;
   }
 
   _lockers() {
     this.zoneMarkers.lockers = new THREE.Vector3(-16, 1.65, 12);
-    const wall = this._matConcrete();
-    this._floor(12, 12, 0.01, this._matTile(), -16, 12);
+    const wall = this._matWall();
+    this._floor(12, 12, 0.01, this._matFloor(), -16, 12);
     this._box(12, 4.2, 0.35, wall, -16, 2.1, 6);
     this._box(12, 4.2, 0.35, wall, -16, 2.1, 18);
     this._box(0.35, 4.2, 12, wall, -22, 2.1, 12);
-    // open toward lobby on +x
     this._box(0.35, 4.2, 4, wall, -10, 2.1, 8);
     this._box(0.35, 4.2, 4, wall, -10, 2.1, 16);
-    this._box(12, 0.25, 12, new THREE.MeshStandardMaterial({ color: 0x0a1016 }), -16, 4.2, 12, { collide: false });
+    this._box(12, 0.25, 12, this._matPlaster(), -16, 4.2, 12, { collide: false });
+    this._lamp(-16, 3.9, 12, 0xaaccff, 3.2);
+    this._lamp(-19, 3.5, 10, 0x88ffaa, 1.8);
 
     // locker bank
     for (let i = 0; i < 8; i++) {
@@ -291,7 +341,7 @@ export class World {
     this._floor(36, 28, 0.01, this._matConcrete(), 0, -10);
 
     // pool basin walls
-    const tile = this._matTile();
+    const tile = this._matFloor();
     this._box(18, 1.4, 0.4, tile, 0, 0.3, -4);
     this._box(18, 1.4, 0.4, tile, 0, 0.3, -22);
     this._box(0.4, 1.4, 18, tile, -9, 0.3, -13);
@@ -303,8 +353,11 @@ export class World {
     this.water = createWater(16.5, 16.5, 0.28);
     this.water.mesh.position.set(0, 0.28, -13);
     this.water.deep.position.set(0, -0.55, -13);
+    this.water.glow.position.set(0, 1.2, -13);
     this.group.add(this.water.deep);
     this.group.add(this.water.mesh);
+    this.group.add(this.water.glow);
+    this.dynamicLights.push(this.water.glow);
 
     // suction grate
     const grate = this._box(1.4, 0.08, 1.4, this._matMetal(0x222833), -4, 0.32, -16);
@@ -590,18 +643,21 @@ export class World {
   }
 
   update(t, tension = 0.2, playerPos = null) {
-    if (this.water) {
-      this.water.normal.offset.x = t * 0.028;
-      this.water.normal.offset.y = t * 0.018;
-      this.water.mat.opacity = 0.78 + Math.sin(t * 1.4) * 0.05;
-    }
+    updateWater(this.water, t);
     for (const l of this.dynamicLights) {
-      if (l.color.g > 0.7 && l.color.r < 0.55) {
-        const base = l.userData.baseIntensity ?? 1.5;
-        l.intensity = base * (0.85 + Math.sin(t * 3 + l.position.x) * 0.15 * (0.5 + tension));
+      if (l.userData?.baseIntensity != null && l.color.g > 0.7 && l.color.r < 0.55) {
+        l.intensity = l.userData.baseIntensity * (0.88 + Math.sin(t * 2.4 + l.position.x) * 0.12);
       }
     }
     if (this.dust) this.dust.rotation.y = t * 0.02;
+    // bob interact markers
+    for (const obj of this.interactables) {
+      const m = obj.userData.marker;
+      if (!m) continue;
+      if (m.userData.baseY == null) m.userData.baseY = m.position.y;
+      m.rotation.y = t * 2;
+      m.position.y = m.userData.baseY + Math.sin(t * 3 + m.position.x) * 0.06;
+    }
     updateWatcher(this.watcher, tension, t, playerPos);
   }
 

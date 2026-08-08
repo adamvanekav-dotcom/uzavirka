@@ -152,6 +152,24 @@ export class AudioBus {
     if (!this.ctx) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     const now = this.ctx.currentTime;
+
+    if (kind === 'step') {
+      const buf = this._noiseBuffer(0.05);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 420 + Math.random() * 180;
+      const gg = this.ctx.createGain();
+      gg.gain.setValueAtTime(0.045, now);
+      gg.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      src.connect(filter);
+      filter.connect(gg);
+      gg.connect(this.sfxGain);
+      src.start(now);
+      return;
+    }
+
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
     osc.connect(g);

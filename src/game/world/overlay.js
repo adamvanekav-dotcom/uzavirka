@@ -32,10 +32,10 @@ export function createOverlayPass(camera) {
         float vig = smoothstep(1.35, 0.25, length(uv));
         float scan = sin((vUv.y + uTime * 0.05) * 900.0) * 0.015;
         float flicker = sin(uTime * 40.0) * 0.01 * uTension;
-        float dark = (1.0 - vig) * (0.55 + uTension * 0.35);
-        float bat = (1.0 - uBattery) * 0.25;
-        vec3 tint = mix(vec3(0.02, 0.05, 0.07), vec3(0.12, 0.02, 0.04), uTension);
-        gl_FragColor = vec4(tint, dark + bat + scan + flicker);
+        float dark = (1.0 - vig) * (0.22 + uTension * 0.28);
+        float bat = (1.0 - uBattery) * 0.12;
+        vec3 tint = mix(vec3(0.01, 0.03, 0.05), vec3(0.1, 0.02, 0.03), uTension);
+        gl_FragColor = vec4(tint, clamp(dark + bat + scan * 0.5 + flicker, 0.0, 0.55));
       }
     `,
   });

@@ -95,7 +95,7 @@ export class Player3D {
       this._stepAcc = (this._stepAcc || 0) + dt * (sprint ? 2.2 : 1.4);
       if (this._stepAcc > 0.42) {
         this._stepAcc = 0;
-        this.audio?.blip('ui');
+        this.audio?.blip('step');
       }
     } else {
       this.bob *= 0.9;
@@ -127,6 +127,15 @@ export class Player3D {
         let obj = hits[0].object;
         while (obj && !obj.userData?.interactId) obj = obj.parent;
         if (obj?.userData?.interactId) this.hovered = obj;
+      }
+    }
+    for (const obj of interactables) {
+      if (!obj.material || !('emissiveIntensity' in obj.material)) continue;
+      const on = obj === this.hovered;
+      obj.material.emissiveIntensity = on ? 0.85 : 0.2;
+      if (obj.userData.marker) {
+        obj.userData.marker.material.emissiveIntensity = on ? 2.4 : 1.2;
+        obj.userData.marker.scale.setScalar(on ? 1.35 : 1);
       }
     }
   }

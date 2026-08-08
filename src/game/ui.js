@@ -7,11 +7,14 @@ export function createUI(root, engine, audio, api = {}) {
   let hud3d = { battery: 100, stamina: 100, flashlightOn: true, prompt: null };
 
   engine.subscribe(() => {
-    if (screen === 'game') renderGame();
-    else if (screen === 'ending' || engine.state.ending) {
+    if (engine.state.ending) {
       screen = 'ending';
+      api.getGame3D?.()?.stop();
       renderEnding();
-    } else if (screen === 'title') renderTitle();
+      return;
+    }
+    if (screen === 'game') renderGame(false);
+    else if (screen === 'title') renderTitle();
   });
 
   function render() {
@@ -151,6 +154,10 @@ Fiktivní park.`,
       if (toast && view.state.log[0]) toast.textContent = view.state.log[0].text;
       const ten = root.querySelector('#hud-tension');
       if (ten) ten.style.width = `${Math.round(view.state.tension * 100)}%`;
+      const smsBtn = root.querySelector('[data-panel="phone"]');
+      if (smsBtn) {
+        smsBtn.innerHTML = `SMS${view.state.phoneUnread ? `<em>${view.state.phoneUnread}</em>` : ''}`;
+      }
       renderPanelSlot(view);
     }
     if (modal) {

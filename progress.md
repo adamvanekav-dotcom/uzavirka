@@ -1,17 +1,23 @@
 # Quality hour — started 15:01, hard stop ~16:05
-## Critical defects (from playtest)
-- Scene too dark / empty boxes read as prototype
-- Floor tiles OK-ish but walls blank, no trim, no detail density
-- Water is flat plane, not convincing
-- Overlay vignette too aggressive → muddy image
-- Footsteps = UI blip (annoying/wrong)
-- Interactables hard to spot
-- Lighting: point lights don't sell wet aquapark
+Loop: every 10m (568046)
 
-## Pass order
-1. Textures (tile/wall/concrete/metal/normals) — HQ procedural
-2. Water realtime shader + caustics
-3. Lighting overhaul + tone down overlay
-4. World detail: wall tiles, skirting, door frames, signage, denser props
-5. Mechanics: footstep SFX, interact glow, collision polish, battery pickup UX
-6. Browser playtest → commit → deploy
+## Fixed
+- [x] HQ floor + wall ceramic textures (512, grout, wet streaks)
+- [x] Realtime water shader + caustics + pool glow light
+- [x] Overlay vignette too dark → toned down
+- [x] Footsteps were UI blips → noise step SFX
+- [x] Interact markers (octahedrons) + hover emissive
+- [x] CRITICAL: canvas remount on every engine.emit
+- [x] Soft-gate wavepool requires turnstile
+- [x] Hide spent once-action markers
+- [x] Brighter ambient/hemi/moon + lobby lamps
+- [x] Wall tiles in lobby/lockers/kids/office
+- [x] Pool lane floats + depth markers
+- [x] Office CRT-ish monitor
+
+## Next
+- Filtration denser pipes + warning signs
+- Wet MeshPhysicalMaterial where supported
+- Collision snags near door frames
+- Production visual QA screenshot
+- More unique props per room (not empty boxes)

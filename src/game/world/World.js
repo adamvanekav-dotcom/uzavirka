@@ -457,12 +457,13 @@ export class World {
 
   _kids() {
     this.zoneMarkers.kids = new THREE.Vector3(8, 1.65, -28);
-    const wall = this._matConcrete();
-    this._floor(14, 12, 0.01, this._matTile(), 8, -28);
+    const wall = this._matWall();
+    this._floor(14, 12, 0.01, this._matFloor(), 8, -28);
     this._box(14, 3.8, 0.3, wall, 8, 1.9, -22);
     this._box(14, 3.8, 0.3, wall, 8, 1.9, -34);
     this._box(0.3, 3.8, 12, wall, 1, 1.9, -28);
     this._box(0.3, 3.8, 12, wall, 15, 1.9, -28);
+    this._lamp(8, 3.4, -28, 0xffe0a0, 3.0);
 
     // shallow fountain
     const bowl = new THREE.Mesh(
@@ -518,18 +519,32 @@ export class World {
 
   _office() {
     this.zoneMarkers.office = new THREE.Vector3(14, 1.65, -4);
-    const wall = this._matConcrete();
-    this._floor(8, 7, 0.01, this._matTile(), 14, -4);
+    const wall = this._matWall();
+    this._floor(8, 7, 0.01, this._matFloor(), 14, -4);
     this._box(8, 3.6, 0.3, wall, 14, 1.8, -0.5);
     this._box(8, 3.6, 0.3, wall, 14, 1.8, -7.5);
     this._box(0.3, 3.6, 7, wall, 10, 1.8, -4);
     this._box(0.3, 3.6, 7, wall, 18, 1.8, -4);
+    this._lamp(14, 3.3, -4, 0x88ffcc, 2.8);
 
     const desk = this._box(2.4, 0.9, 1.1, this._matMetal(0x5a6a70), 14, 0.45, -4);
     const folder = this._box(0.4, 0.08, 0.3, new THREE.MeshStandardMaterial({ color: 0xccaa44, emissive: 0x664400, emissiveIntensity: 0.3 }), 14.3, 0.95, -4);
     this._interact(folder, 'office_folder', 'Otevřít složku DŮKAZY');
 
-    const monitor = this._box(1.2, 0.8, 0.1, new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x113322, emissiveIntensity: 0.6 }), 13.2, 1.5, -1);
+    const monitor = this._box(1.2, 0.8, 0.1, new THREE.MeshStandardMaterial({
+      color: 0x0a1a12,
+      emissive: 0x1a6644,
+      emissiveIntensity: 0.9,
+      roughness: 0.25,
+    }), 13.2, 1.5, -1);
+    // scanline screen plate
+    this._box(1.05, 0.65, 0.02, new THREE.MeshStandardMaterial({
+      color: 0x102818,
+      emissive: 0x33aa66,
+      emissiveIntensity: 0.45 + Math.random() * 0.1,
+      transparent: true,
+      opacity: 0.85,
+    }), 13.2, 1.5, -0.94, { collide: false });
     this._interact(monitor, 'office_cctv', 'Zapnout kamerový monitor');
 
     const leave = this._box(1.2, 1.8, 0.1, this._matMetal(0xaa5555), 16.5, 0.9, -4);
@@ -544,20 +559,27 @@ export class World {
     this.zoneMarkers.filtration = new THREE.Vector3(0, -2.2, -14);
     const wall = this._matConcrete();
 
-    // underground room
     this._floor(14, 12, -4, wall, 0, -14);
     this._box(14, 4, 0.4, wall, 0, -2, -8);
     this._box(14, 4, 0.4, wall, 0, -2, -20);
     this._box(0.4, 4, 12, wall, -7, -2, -14);
     this._box(0.4, 4, 12, wall, 7, -2, -14);
-    this._box(14, 0.3, 12, new THREE.MeshStandardMaterial({ color: 0x080c10 }), 0, 0, -14, { collide: false });
+    this._box(14, 0.3, 12, this._matPlaster(), 0, 0, -14, { collide: false });
+    this._lamp(0, -0.5, -14, 0xff8844, 3.5, 0.5);
+    this._lamp(-4, -1.2, -17, 0xffaa66, 2.0);
 
-    // stairs from office side
+    // warning stripe
+    for (let i = 0; i < 8; i++) {
+      this._box(1.2, 0.08, 0.25, new THREE.MeshStandardMaterial({
+        color: i % 2 ? 0x111111 : 0xe8a010,
+        roughness: 0.5,
+      }), -5 + i * 1.3, -3.95, -11, { collide: false });
+    }
+
     for (let i = 0; i < 8; i++) {
       this._box(2, 0.25, 0.8, wall, 10 - i * 0.15, -0.2 - i * 0.45, -8.5 - i * 0.4, { collide: false });
     }
 
-    // pipes
     for (let i = 0; i < 5; i++) {
       const pipe = new THREE.Mesh(
         new THREE.CylinderGeometry(0.28, 0.28, 5, 12),
@@ -566,6 +588,14 @@ export class World {
       pipe.rotation.z = Math.PI / 2;
       pipe.position.set(0, -1.2, -10 - i * 1.5);
       this.group.add(pipe);
+      // pipe flanges
+      const flange = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32, 0.06, 8, 16),
+        this._matMetal(0x8899aa),
+      );
+      flange.rotation.y = Math.PI / 2;
+      flange.position.set(-2.2, -1.2, -10 - i * 1.5);
+      this.group.add(flange);
     }
 
     // valves A B C D

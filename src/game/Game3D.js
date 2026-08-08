@@ -53,7 +53,7 @@ export class Game3D {
     envScene.add(e2);
     this.scene.environment = pmrem.fromScene(envScene, 0.04).texture;
     pmrem.dispose();
-    this.renderer.toneMappingExposure = 1.35;
+    this.renderer.toneMappingExposure = 1.2;
 
     this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;

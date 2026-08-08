@@ -73,9 +73,9 @@ export function makeFloorTile(size = 512) {
     for (let y = 0; y < s; y += tile) {
       for (let x = 0; x < s; x += tile) {
         const n = ((x * 13 + y * 7) % 17) / 17;
-        const r = 32 + n * 22;
-        const g = 92 + n * 32;
-        const b = 108 + n * 34;
+        const r = 18 + n * 14;
+        const g = 58 + n * 22;
+        const b = 72 + n * 24;
         const grd = ctx.createLinearGradient(x, y, x + tile, y + tile);
         grd.addColorStop(0, `rgb(${r + 18},${g + 16},${b + 14})`);
         grd.addColorStop(0.5, `rgb(${r},${g},${b})`);
@@ -123,9 +123,9 @@ export function makeWallTile(size = 512) {
       for (let x = -tw; x < s + tw; x += tw) {
         const px = x + offset;
         const n = ((px * 3 + y * 11) % 13) / 13;
-        const r = 42 + n * 16;
-        const g = 102 + n * 24;
-        const b = 112 + n * 26;
+        const r = 28 + n * 12;
+        const g = 68 + n * 18;
+        const b = 78 + n * 20;
         ctx.fillStyle = `rgb(${r},${g},${b})`;
         ctx.fillRect(px + 2, y + 2, tw - 4, th - 4);
         ctx.fillStyle = 'rgba(255,255,255,0.1)';

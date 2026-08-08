@@ -243,13 +243,13 @@ export class World {
   }
 
   _lighting() {
-    this.scene.background = new THREE.Color(0x0a1520);
-    this.scene.fog = new THREE.FogExp2(0x0c1a24, 0.008);
+    this.scene.background = new THREE.Color(0x060e16);
+    this.scene.fog = new THREE.FogExp2(0x081420, 0.011);
 
-    this.scene.add(new THREE.AmbientLight(0x6a8a9a, 1.05));
-    this.scene.add(new THREE.HemisphereLight(0xb0d0e8, 0x2a1810, 0.75));
+    this.scene.add(new THREE.AmbientLight(0x4a6578, 0.55));
+    this.scene.add(new THREE.HemisphereLight(0x6a90a8, 0x1a1008, 0.45));
 
-    const moon = new THREE.DirectionalLight(0xd0e4f8, 1.35);
+    const moon = new THREE.DirectionalLight(0xb8cce0, 0.85);
     moon.position.set(-20, 50, 18);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
@@ -297,18 +297,30 @@ export class World {
     sign.rotation.y = Math.PI;
     this.group.add(sign);
 
-    const desk = this._box(4.2, 1.05, 1.1, this._matMetal(0x7a8a98), -3.2, 0.52, 14.5);
-    // desk top detail
-    this._box(4.3, 0.06, 1.2, this._matMetal(0xa0b0c0), -3.2, 1.08, 14.5, { collide: false });
-    this._interact(desk, 'lobby_drawer', 'Otevřít šuplík u recepce');
+    // Reception desk — multi-piece, not one box
+    const deskBody = this._box(4.4, 0.95, 1.15, this._matMetal(0x5a6a78), -3.2, 0.48, 14.5);
+    this._box(4.5, 0.07, 1.25, this._matMetal(0x8a9aaa), -3.2, 0.98, 14.5, { collide: false });
+    // front panel
+    this._box(4.35, 0.7, 0.06, this._matMetal(0x3a4a55), -3.2, 0.4, 15.05, { collide: false });
+    // monitor
+    this._box(0.08, 0.55, 0.7, this._matMetal(0x222830), -4.4, 1.4, 14.35, { collide: false });
+    this._box(0.04, 0.48, 0.62, new THREE.MeshStandardMaterial({
+      color: 0x0a1812,
+      emissive: 0x1a6644,
+      emissiveIntensity: 0.7,
+    }), -4.35, 1.4, 14.35, { collide: false });
+    // keyboard + mouse
+    this._box(0.55, 0.03, 0.22, this._matMetal(0x1a1e22), -3.6, 1.02, 14.7, { collide: false });
+    this._box(0.08, 0.03, 0.05, this._matMetal(0x111111), -3.15, 1.02, 14.55, { collide: false });
+    this._interact(deskBody, 'lobby_drawer', 'Otevřít šuplík u recepce');
 
-    const flyer = this._box(0.35, 0.02, 0.28, new THREE.MeshStandardMaterial({ color: 0xe8d9a0, roughness: 0.55 }), -2.2, 1.12, 14.5);
+    const flyer = this._box(0.35, 0.02, 0.28, new THREE.MeshStandardMaterial({ color: 0xe8d9a0, roughness: 0.55 }), -2.2, 1.04, 14.5);
     this._interact(flyer, 'lobby_flyer', 'Sebrat leták');
 
-    const book = this._box(0.45, 0.07, 0.32, new THREE.MeshStandardMaterial({ color: 0x6a3040, roughness: 0.7 }), -1.2, 1.12, 14.5);
+    const book = this._box(0.45, 0.07, 0.32, new THREE.MeshStandardMaterial({ color: 0x6a3040, roughness: 0.7 }), -1.2, 1.04, 14.5);
     this._interact(book, 'lobby_guest_book', 'Otevřít knihu přání');
 
-    const batt = this._box(0.22, 0.08, 0.14, new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x1a6a1a, emissiveIntensity: 0.7 }), -3.9, 1.12, 14.5);
+    const batt = this._box(0.22, 0.08, 0.14, new THREE.MeshStandardMaterial({ color: 0x1a1a1a, emissive: 0x1a6a1a, emissiveIntensity: 0.7 }), -2.7, 1.04, 14.85);
     this._interact(batt, 'lobby_batteries_fix', 'Vzít baterie');
 
     const mapBoard = this._box(2.4, 1.5, 0.08, this._matMetal(0x445566), 5, 1.9, 4.3);
@@ -329,11 +341,11 @@ export class World {
     const toParking = this._box(2.2, 2.5, 0.1, this._matMetal(0x667788), 0, 1.25, 19.75);
     this._interact(toParking, 'parking', 'Zpět na parkoviště', 'exit');
 
-    this._lamp(-4, 4.7, 12, 0xc8e8ff, 4.5);
-    this._lamp(4, 4.7, 12, 0xc8e8ff, 4.5);
-    this._lamp(0, 4.7, 16, 0x98ffdd, 3.5);
-    this._lamp(-3, 3.2, 14.5, 0xffe8b0, 2.4, 0.25);
-    this._lamp(0, 4.5, 8, 0xaadfff, 3.0);
+    this._lamp(-4, 4.7, 12, 0xa8c8e0, 2.8);
+    this._lamp(4, 4.7, 12, 0xa8c8e0, 2.8);
+    this._lamp(0, 4.7, 16, 0x78c8a8, 2.2);
+    this._lamp(-3, 3.0, 14.5, 0xffd090, 1.6, 0.25);
+    this._lamp(0, 4.5, 8, 0x88b8d8, 2.0);
 
     // lobby props — bench, extinguisher, poster, plant
     this._box(2.2, 0.45, 0.7, this._matMetal(0x5a6a78), 6.5, 0.35, 10, { collide: false });
@@ -467,10 +479,21 @@ export class World {
     this._interact(this._box(2, 2.3, 0.12, this._matMetal(0x668866), 10, 1.15, -20), 'kids', 'K dětskému klubu', 'exit');
     this._interact(this._box(2, 2.3, 0.12, this._matMetal(0xaa8866), 8, 1.15, -6), 'office', 'Do plavčíkovy kanceláře', 'exit');
 
-    // lounge chairs
+    // lounge chairs with frames
     for (let i = 0; i < 5; i++) {
-      this._box(0.7, 0.35, 1.8, new THREE.MeshStandardMaterial({ color: 0xc4a35a, roughness: 0.7 }), -12 + i * 1.2, 0.25, -2.5, { collide: false });
+      const x = -12 + i * 1.2;
+      this._box(0.08, 0.45, 1.7, this._matMetal(0x8899aa), x - 0.3, 0.25, -2.5, { collide: false });
+      this._box(0.08, 0.45, 1.7, this._matMetal(0x8899aa), x + 0.3, 0.25, -2.5, { collide: false });
+      this._box(0.7, 0.12, 1.8, new THREE.MeshStandardMaterial({ color: 0xb8954a, roughness: 0.65 }), x, 0.42, -2.5, { collide: false });
     }
+    // life ring on wall
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.45, 0.1, 8, 20),
+      new THREE.MeshStandardMaterial({ color: 0xd03030, roughness: 0.5 }),
+    );
+    ring.position.set(8.7, 1.6, -5);
+    ring.rotation.y = Math.PI / 2;
+    this.group.add(ring);
 
     this._lamp(0, 4.5, -8, 0x66e0e8, 5.5, 0.6);
     this._lamp(-6, 3.5, -14, 0x44ffaa, 2.2);

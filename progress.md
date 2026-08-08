@@ -1,22 +1,10 @@
-# Quality hour — started 15:01, hard stop ~16:05
-Loop: every 10m (568046)
+# Quality hour — 15:01 → 16:05
+## Honest status 15:15
+Still not AAA. Procedural tiles ≠ handcrafted assets.
+But this pass is real: normal maps, env reflections, steam, denser lockers, portal fix.
 
-## Fixed
-- [x] HQ floor + wall ceramic textures
-- [x] Realtime water shader + caustics
-- [x] Overlay vignette toned down
-- [x] Step SFX, interact markers, hover glow
-- [x] Canvas remount bug
-- [x] Soft-gate wavepool / hide spent markers
-- [x] Brighter lights + wall tiles rooms
-- [x] Pool floats, CRT, filtration detail
-- [x] Exit doors no longer solid colliders (ghost portals)
-- [x] Wet MeshPhysicalMaterial floors (clearcoat)
-- [x] Lobby props: bench, extinguisher, poster, plant
-- [x] Smaller player radius for less snagging
-
-## Next ticks
-- Normal maps for tiles
-- More unique props lockers/pool
-- Collision QA doorways
-- Keep deploying
+## Keep grinding until 16:05
+- Darker richer albedo (less washed cyan)
+- Unique mesh props not boxes
+- Better reception desk model
+- Shadow contact / fill lights tuned

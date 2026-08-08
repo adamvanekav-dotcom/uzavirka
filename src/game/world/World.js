@@ -395,6 +395,21 @@ export class World {
     this._lamp(-6, 3.5, -14, 0x44ffaa, 2.2);
     this._lamp(6, 3.5, -14, 0x44ffaa, 2.2);
     this._lamp(-4, 1.2, -16, 0xff6644, 1.4, 0.2);
+
+    // lane ropes / float line
+    for (let i = 0; i < 12; i++) {
+      const float = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 8, 8),
+        new THREE.MeshStandardMaterial({ color: i % 2 ? 0xe8e8e8 : 0xd03030, roughness: 0.4 }),
+      );
+      float.position.set(-7 + i * 1.15, 0.35, -10);
+      this.group.add(float);
+    }
+    // depth markers
+    for (const [label, x] of [[1.2, -7], [1.6, 0], [1.8, 6]]) {
+      const sign = this._box(0.5, 0.35, 0.05, this._matMetal(0x226688), x, 1.1, -4.3, { collide: false });
+      sign.material = new THREE.MeshStandardMaterial({ color: 0x1a5060, emissive: 0x0a2030, emissiveIntensity: 0.3 });
+    }
   }
 
   _tower() {
@@ -642,7 +657,7 @@ export class World {
     this.group.add(this.dust);
   }
 
-  update(t, tension = 0.2, playerPos = null) {
+  update(t, tension = 0.2, playerPos = null, engine = null) {
     updateWater(this.water, t);
     for (const l of this.dynamicLights) {
       if (l.userData?.baseIntensity != null && l.color.g > 0.7 && l.color.r < 0.55) {
@@ -650,13 +665,19 @@ export class World {
       }
     }
     if (this.dust) this.dust.rotation.y = t * 0.02;
-    // bob interact markers
     for (const obj of this.interactables) {
       const m = obj.userData.marker;
       if (!m) continue;
       if (m.userData.baseY == null) m.userData.baseY = m.position.y;
       m.rotation.y = t * 2;
       m.position.y = m.userData.baseY + Math.sin(t * 3 + m.position.x) * 0.06;
+      // hide markers for spent once-actions / missing requirements roughly
+      if (engine) {
+        const id = obj.userData.interactId;
+        const spent = engine.flag(`done_${id}`);
+        m.visible = !spent;
+        obj.visible = obj.userData.interactKind === 'exit' ? true : !spent;
+      }
     }
     updateWatcher(this.watcher, tension, t, playerPos);
   }

@@ -65,7 +65,7 @@ export class Game3D {
       const dt = Math.min(0.05, this.clock.getDelta());
       if (this.active) {
         this.player.update(dt, this.world.interactables);
-        this.world.update(this.clock.elapsedTime, this.engine.state.tension, this.player.position);
+        this.world.update(this.clock.elapsedTime, this.engine.state.tension, this.player.position, this.engine);
         if (this.overlayMat) {
           this.overlayMat.uniforms.uTime.value = this.clock.elapsedTime;
           this.overlayMat.uniforms.uTension.value = this.engine.state.tension;

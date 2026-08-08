@@ -806,24 +806,36 @@ export class World {
     this._box(0.3, 3.6, 7, wall, 18, 1.8, -4);
     this._lamp(14, 3.3, -4, 0x88ffcc, 2.8);
 
-    const desk = this._box(2.4, 0.9, 1.1, this._matMetal(0x5a6a70), 14, 0.45, -4);
-    const folder = this._box(0.4, 0.08, 0.3, new THREE.MeshStandardMaterial({ color: 0xccaa44, emissive: 0x664400, emissiveIntensity: 0.3 }), 14.3, 0.95, -4);
+    const desk = this._box(2.4, 0.9, 1.1, this._matMetal(0x4a5a60), 14, 0.45, -4);
+    this._box(2.5, 0.06, 1.2, this._matMetal(0x6a7a80), 14, 0.92, -4, { collide: false });
+    // drawers
+    this._box(0.7, 0.28, 0.95, this._matMetal(0x3a4a50), 13.2, 0.35, -4, { collide: false });
+    this._box(0.7, 0.28, 0.95, this._matMetal(0x3a4a50), 14.0, 0.35, -4, { collide: false });
+    this._box(0.08, 0.04, 0.04, this._matMetal(0xccddee), 13.55, 0.35, -3.48, { collide: false });
+    this._box(0.08, 0.04, 0.04, this._matMetal(0xccddee), 14.35, 0.35, -3.48, { collide: false });
+    const folder = this._box(0.4, 0.08, 0.3, new THREE.MeshStandardMaterial({ color: 0xccaa44, emissive: 0x664400, emissiveIntensity: 0.3 }), 14.3, 0.98, -4);
     this._interact(folder, 'office_folder', 'Otevřít složku DŮKAZY');
+    // mug + papers
+    this._cyl(0.07, 0.06, 0.12, new THREE.MeshStandardMaterial({ color: 0xc8c8c8 }), 13.5, 1.02, -3.7);
+    this._box(0.35, 0.01, 0.25, new THREE.MeshStandardMaterial({ color: 0xe8e4d8 }), 14.7, 0.96, -3.7, { collide: false });
+    this._box(0.32, 0.01, 0.22, new THREE.MeshStandardMaterial({ color: 0xd8e0e8 }), 14.75, 0.975, -3.72, { collide: false });
 
-    const monitor = this._box(1.2, 0.8, 0.1, new THREE.MeshStandardMaterial({
+    // CRT bezel + screen
+    this._box(1.35, 1.0, 0.35, this._matMetal(0x2a2e34), 13.2, 1.55, -1.05, { collide: false });
+    const monitor = this._box(1.05, 0.72, 0.08, new THREE.MeshStandardMaterial({
       color: 0x0a1a12,
       emissive: 0x1a6644,
       emissiveIntensity: 0.9,
       roughness: 0.25,
-    }), 13.2, 1.5, -1);
-    // scanline screen plate
-    this._box(1.05, 0.65, 0.02, new THREE.MeshStandardMaterial({
+    }), 13.2, 1.55, -0.88);
+    this._box(1.0, 0.68, 0.02, new THREE.MeshStandardMaterial({
       color: 0x102818,
       emissive: 0x33aa66,
-      emissiveIntensity: 0.45 + Math.random() * 0.1,
+      emissiveIntensity: 0.5,
       transparent: true,
       opacity: 0.85,
-    }), 13.2, 1.5, -0.94, { collide: false });
+    }), 13.2, 1.55, -0.83, { collide: false });
+    this._box(0.35, 0.15, 0.25, this._matMetal(0x222830), 13.2, 0.95, -1.0, { collide: false });
     this._interact(monitor, 'office_cctv', 'Zapnout kamerový monitor');
 
     const leave = this._box(1.2, 1.8, 0.1, this._matMetal(0xaa5555), 16.5, 0.9, -4);

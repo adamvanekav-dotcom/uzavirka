@@ -25,14 +25,19 @@ export class Player3D {
     this.hovered = null;
     this.colliders = [];
 
-    this.flashlight = new THREE.SpotLight(0xffe8c8, 22, 28, Math.PI / 6.5, 0.28, 1.1);
+    this.flashlight = new THREE.SpotLight(0xfff0d8, 28, 32, Math.PI / 5.8, 0.32, 1.05);
     this.flashlight.castShadow = true;
     this.flashlight.shadow.mapSize.set(1024, 1024);
+    this.flashlight.position.set(0.12, -0.08, 0.05);
     this.flashTarget = new THREE.Object3D();
     scene.add(this.flashTarget);
     this.flashlight.target = this.flashTarget;
     camera.add(this.flashlight);
     scene.add(camera);
+    // fill beam so wet floors read without full wash
+    this.flashFill = new THREE.PointLight(0xffe0b0, 1.4, 6, 2);
+    this.flashFill.position.set(0, -0.1, 0.2);
+    camera.add(this.flashFill);
 
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = 3.2;
@@ -62,6 +67,7 @@ export class Player3D {
     if (this.battery <= 0) return;
     this.flashlightOn = !this.flashlightOn;
     this.flashlight.visible = this.flashlightOn;
+    if (this.flashFill) this.flashFill.visible = this.flashlightOn;
     this.audio?.blip('ui');
   }
 
@@ -115,8 +121,11 @@ export class Player3D {
       if (this.battery <= 0) {
         this.flashlightOn = false;
         this.flashlight.visible = false;
+        if (this.flashFill) this.flashFill.visible = false;
       }
-      this.flashlight.intensity = 6 + Math.sin(performance.now() * 0.01) * 0.35;
+      const flicker = Math.sin(performance.now() * 0.01) * 0.8;
+      this.flashlight.intensity = 26 + flicker;
+      if (this.flashFill) this.flashFill.intensity = 1.35 + flicker * 0.08;
     }
 
     this.hovered = null;

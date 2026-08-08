@@ -73,13 +73,13 @@ export function makeFloorTile(size = 512) {
     for (let y = 0; y < s; y += tile) {
       for (let x = 0; x < s; x += tile) {
         const n = ((x * 13 + y * 7) % 17) / 17;
-        const r = 18 + n * 14;
-        const g = 58 + n * 22;
-        const b = 72 + n * 24;
+        const r = 14 + n * 10;
+        const g = 42 + n * 14;
+        const b = 52 + n * 16;
         const grd = ctx.createLinearGradient(x, y, x + tile, y + tile);
-        grd.addColorStop(0, `rgb(${r + 18},${g + 16},${b + 14})`);
+        grd.addColorStop(0, `rgb(${r + 12},${g + 10},${b + 8})`);
         grd.addColorStop(0.5, `rgb(${r},${g},${b})`);
-        grd.addColorStop(1, `rgb(${r - 8},${g - 6},${b - 4})`);
+        grd.addColorStop(1, `rgb(${r - 6},${g - 5},${b - 4})`);
         ctx.fillStyle = grd;
         ctx.fillRect(x + 3, y + 3, tile - 6, tile - 6);
         // bevel highlight (height for normals)
@@ -123,9 +123,9 @@ export function makeWallTile(size = 512) {
       for (let x = -tw; x < s + tw; x += tw) {
         const px = x + offset;
         const n = ((px * 3 + y * 11) % 13) / 13;
-        const r = 28 + n * 12;
-        const g = 68 + n * 18;
-        const b = 78 + n * 20;
+        const r = 22 + n * 10;
+        const g = 48 + n * 12;
+        const b = 56 + n * 14;
         ctx.fillStyle = `rgb(${r},${g},${b})`;
         ctx.fillRect(px + 2, y + 2, tw - 4, th - 4);
         ctx.fillStyle = 'rgba(255,255,255,0.1)';

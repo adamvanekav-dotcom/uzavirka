@@ -6,6 +6,7 @@ import {
   makeNeonSignTexture,
 } from './textures.js';
 import { createWater } from './water.js';
+import { createWatcher, updateWatcher } from './Watcher.js';
 
 /**
  * Connected night aquapark. Interactables use userData:
@@ -42,6 +43,8 @@ export class World {
     this._office();
     this._filtration();
     this._decor();
+    this.watcher = createWatcher();
+    this.group.add(this.watcher);
     return this;
   }
 
@@ -120,6 +123,7 @@ export class World {
     this.group.add(bulb);
     const l = new THREE.PointLight(color, intensity, 18, 1.4);
     l.position.set(x, y - 0.15, z);
+    l.userData.baseIntensity = intensity;
     this.group.add(l);
     this.dynamicLights.push(l);
     return l;
@@ -524,7 +528,7 @@ export class World {
 
   _decor() {
     // wet puddle decals
-    for (const [x, z] of [[2, 10], [-4, 15], [1, -6], [-8, -12], [6, -27]]) {
+    for (const [x, z] of [[2, 10], [-4, 15], [1, -6], [-8, -12], [6, -27], [0, 18], [-2, 8]]) {
       const p = new THREE.Mesh(
         new THREE.CircleGeometry(0.6 + Math.random() * 0.5, 16),
         new THREE.MeshStandardMaterial({
@@ -538,6 +542,34 @@ export class World {
       p.rotation.x = -Math.PI / 2;
       p.position.set(x, 0.02, z);
       this.group.add(p);
+    }
+
+    // pool umbrellas
+    for (const [x, z] of [[-11, -3], [-8, -3], [11, -4]]) {
+      const pole = this._box(0.08, 2.2, 0.08, this._matMetal(), x, 1.1, z, { collide: false });
+      const canopy = new THREE.Mesh(
+        new THREE.ConeGeometry(1.4, 0.35, 12, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0xc45a4a, side: THREE.DoubleSide, roughness: 0.6 }),
+      );
+      canopy.position.set(x, 2.3, z);
+      this.group.add(canopy);
+    }
+
+    // fake palm trunks parking
+    for (const [x, z] of [[-8, 26], [8, 26], [-12, 22]]) {
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.25, 3.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5a4030 }),
+      );
+      trunk.position.set(x, 1.6, z);
+      this.group.add(trunk);
+      const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0x1e5a38, flatShading: true }),
+      );
+      leaves.position.set(x, 3.4, z);
+      leaves.scale.y = 0.55;
+      this.group.add(leaves);
     }
 
     // floating dust particles
@@ -557,20 +589,20 @@ export class World {
     this.group.add(this.dust);
   }
 
-  update(t, tension = 0.2) {
+  update(t, tension = 0.2, playerPos = null) {
     if (this.water) {
       this.water.normal.offset.x = t * 0.028;
       this.water.normal.offset.y = t * 0.018;
       this.water.mat.opacity = 0.78 + Math.sin(t * 1.4) * 0.05;
     }
     for (const l of this.dynamicLights) {
-      if (l.color.getHex() === 0x44ff99 || l.color.g > 0.8) {
-        l.intensity = 0.4 + Math.sin(t * 3 + l.position.x) * 0.15 * (0.5 + tension);
+      if (l.color.g > 0.7 && l.color.r < 0.55) {
+        const base = l.userData.baseIntensity ?? 1.5;
+        l.intensity = base * (0.85 + Math.sin(t * 3 + l.position.x) * 0.15 * (0.5 + tension));
       }
     }
-    if (this.dust) {
-      this.dust.rotation.y = t * 0.02;
-    }
+    if (this.dust) this.dust.rotation.y = t * 0.02;
+    updateWatcher(this.watcher, tension, t, playerPos);
   }
 
   teleportPlayer(player, locationId) {

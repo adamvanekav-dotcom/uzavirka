@@ -63,7 +63,7 @@ export class Game3D {
       const dt = Math.min(0.05, this.clock.getDelta());
       if (this.active) {
         this.player.update(dt, this.world.interactables);
-        this.world.update(this.clock.elapsedTime, this.engine.state.tension);
+        this.world.update(this.clock.elapsedTime, this.engine.state.tension, this.player.position);
         this.onFrame?.(this.getHud());
       }
       this.renderer.render(this.scene, this.camera);

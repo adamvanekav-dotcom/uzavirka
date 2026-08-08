@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { World } from './world/World.js';
 import { Player3D } from './player/Player3D.js';
+import { createOverlayPass } from './world/overlay.js';
 
 export class Game3D {
   constructor(canvas, engine, audio) {
@@ -32,6 +33,7 @@ export class Game3D {
     this.player.position.copy(this.world.zoneMarkers.lobby);
     this.player.euler.set(0, Math.PI, 0);
     this.player.syncCamera();
+    this.overlayMat = createOverlayPass(this.camera);
 
     this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -64,6 +66,11 @@ export class Game3D {
       if (this.active) {
         this.player.update(dt, this.world.interactables);
         this.world.update(this.clock.elapsedTime, this.engine.state.tension, this.player.position);
+        if (this.overlayMat) {
+          this.overlayMat.uniforms.uTime.value = this.clock.elapsedTime;
+          this.overlayMat.uniforms.uTension.value = this.engine.state.tension;
+          this.overlayMat.uniforms.uBattery.value = this.player.battery / 100;
+        }
         this.onFrame?.(this.getHud());
       }
       this.renderer.render(this.scene, this.camera);

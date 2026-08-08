@@ -92,8 +92,14 @@ export class Player3D {
       wish.normalize().multiplyScalar(speed * dt);
       this._moveWithCollision(wish);
       this.bob += dt * (sprint ? 12 : 8);
+      this._stepAcc = (this._stepAcc || 0) + dt * (sprint ? 2.2 : 1.4);
+      if (this._stepAcc > 0.42) {
+        this._stepAcc = 0;
+        this.audio?.blip('ui');
+      }
     } else {
       this.bob *= 0.9;
+      this._stepAcc = 0;
     }
 
     const bobY = Math.sin(this.bob) * 0.035;

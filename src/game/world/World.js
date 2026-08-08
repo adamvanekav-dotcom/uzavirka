@@ -389,6 +389,7 @@ export class World {
     this._box(19.6, 0.12, 0.18, this._matMetal(0x556670), 0, 4.85, 12, { collide: false });
     this._box(0.18, 0.12, 15.5, this._matMetal(0x556670), -9.8, 4.85, 12, { collide: false });
     this._box(0.18, 0.12, 15.5, this._matMetal(0x556670), 9.8, 4.85, 12, { collide: false });
+    this._box(2.2, 0.45, 0.7, this._matMetal(0x5a6a78), 6.5, 0.35, 10, { collide: false });
     this._box(2.2, 0.08, 0.7, new THREE.MeshStandardMaterial({ color: 0x2a3038 }), 6.5, 0.6, 10, { collide: false });
     const extinguisher = this._box(0.22, 0.55, 0.22, new THREE.MeshStandardMaterial({ color: 0xb02020, roughness: 0.4, metalness: 0.3 }), -8.5, 1.0, 18.5, { collide: false });
     extinguisher.material.emissive = new THREE.Color(0x400000);

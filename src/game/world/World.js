@@ -156,6 +156,18 @@ export class World {
     return mesh;
   }
 
+  _cyl(rTop, rBot, h, mat, x, y, z, opts = {}) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, opts.seg || 16), mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    if (opts.rotX) mesh.rotation.x = opts.rotX;
+    if (opts.rotZ) mesh.rotation.z = opts.rotZ;
+    if (opts.rotY) mesh.rotation.y = opts.rotY;
+    this.group.add(mesh);
+    return mesh;
+  }
+
   _floor(w, d, y, mat, x = 0, z = 0) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
     mesh.rotation.x = -Math.PI / 2;
@@ -252,13 +264,13 @@ export class World {
   }
 
   _lighting() {
-    this.scene.background = new THREE.Color(0x060e16);
-    this.scene.fog = new THREE.FogExp2(0x081420, 0.011);
+    this.scene.background = new THREE.Color(0x040a12);
+    this.scene.fog = new THREE.FogExp2(0x061018, 0.013);
 
-    this.scene.add(new THREE.AmbientLight(0x4a6578, 0.55));
-    this.scene.add(new THREE.HemisphereLight(0x6a90a8, 0x1a1008, 0.45));
+    this.scene.add(new THREE.AmbientLight(0x3a5060, 0.38));
+    this.scene.add(new THREE.HemisphereLight(0x5a7890, 0x120c08, 0.42));
 
-    const moon = new THREE.DirectionalLight(0xb8cce0, 0.85);
+    const moon = new THREE.DirectionalLight(0xa8bdd4, 0.72);
     moon.position.set(-20, 50, 18);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
@@ -266,8 +278,14 @@ export class World {
     moon.shadow.camera.right = 55;
     moon.shadow.camera.top = 55;
     moon.shadow.camera.bottom = -55;
-    moon.shadow.bias = -0.0002;
+    moon.shadow.bias = -0.00025;
+    moon.shadow.normalBias = 0.02;
     this.scene.add(moon);
+
+    // warm contact fill near floor — kills flat cyan wash
+    const fill = new THREE.DirectionalLight(0xffc090, 0.18);
+    fill.position.set(8, 12, -4);
+    this.scene.add(fill);
   }
 
   _parkingAndLobby() {
@@ -335,7 +353,25 @@ export class World {
     const mapBoard = this._box(2.4, 1.5, 0.08, this._matMetal(0x445566), 5, 1.9, 4.3);
     this._interact(mapBoard, 'lobby_map', 'Prohlédnout mapu areálu');
 
-    const vending = this._box(1.15, 2.1, 0.75, this._matMetal(0x556677), 7.5, 1.05, 16);
+    const vending = this._box(1.15, 2.1, 0.75, this._matMetal(0x334048), 7.5, 1.05, 16);
+    // glass front + drink rows
+    this._box(0.95, 1.35, 0.04, new THREE.MeshPhysicalMaterial({
+      color: 0x88aacc,
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.05,
+      metalness: 0.1,
+      transmission: 0.4,
+    }), 7.5, 1.25, 16.4, { collide: false });
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 3; c++) {
+        this._cyl(0.06, 0.06, 0.22, new THREE.MeshStandardMaterial({
+          color: [0xc03030, 0x2080c0, 0xe8a020, 0x30a050][r],
+          roughness: 0.35,
+        }), 7.15 + c * 0.28, 0.55 + r * 0.32, 16.25);
+      }
+    }
+    this._box(0.5, 0.08, 0.35, this._matMetal(0x222830), 7.5, 0.25, 16.35, { collide: false });
     this._interact(vending, 'lobby_vending', 'Kopnout do automatu');
 
     const turnBase = this._box(0.35, 1.05, 0.35, this._matMetal(0x667788), 0, 0.52, 8.2);
@@ -474,12 +510,20 @@ export class World {
     // deck
     this._floor(36, 28, 0.01, this._matConcrete(), 0, -10);
 
-    // pool basin walls
+    // pool basin walls + coping
     const tile = this._matFloor();
     this._box(18, 1.4, 0.4, tile, 0, 0.3, -4);
     this._box(18, 1.4, 0.4, tile, 0, 0.3, -22);
     this._box(0.4, 1.4, 18, tile, -9, 0.3, -13);
     this._box(0.4, 1.4, 18, tile, 9, 0.3, -13);
+    // stone coping ledge
+    this._box(18.6, 0.12, 0.55, this._matConcrete(), 0, 1.05, -4.05, { collide: false });
+    this._box(18.6, 0.12, 0.55, this._matConcrete(), 0, 1.05, -21.95, { collide: false });
+    this._box(0.55, 0.12, 18.6, this._matConcrete(), -9.05, 1.05, -13, { collide: false });
+    this._box(0.55, 0.12, 18.6, this._matConcrete(), 9.05, 1.05, -13, { collide: false });
+    // depth stripe on basin wall
+    this._box(17.2, 0.18, 0.06, new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.45 }), 0, 0.55, -4.18, { collide: false });
+    this._box(17.2, 0.18, 0.06, new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.45 }), 0, 0.55, -21.82, { collide: false });
 
     // pool floor
     this._floor(17.2, 17.2, -0.9, tile, 0, -13);
@@ -493,16 +537,39 @@ export class World {
     this.group.add(this.water.glow);
     this.dynamicLights.push(this.water.glow);
 
-    // suction grate
-    const grate = this._box(1.4, 0.08, 1.4, this._matMetal(0x222833), -4, 0.32, -16);
+    // suction grate with bars
+    const grate = this._box(1.5, 0.1, 1.5, this._matMetal(0x1a1e28), -4, 0.32, -16);
+    for (let i = 0; i < 6; i++) {
+      this._box(1.35, 0.04, 0.06, this._matMetal(0x445566), -4, 0.38, -16.55 + i * 0.22, { collide: false });
+      this._box(0.06, 0.04, 1.35, this._matMetal(0x445566), -4.55 + i * 0.22, 0.39, -16, { collide: false });
+    }
     this._interact(grate, 'wave_grate', 'Jít k sacímu koši (sektor B)');
-    const grate2 = this._box(1.2, 0.05, 1.2, this._matMetal(0x11151c), -4, 0.33, -16, { collide: false });
+    const grate2 = this._box(1.2, 0.05, 1.2, this._matMetal(0x11151c), -4, 0.42, -16, { collide: false });
     this._interact(grate2, 'wave_grate_again', 'Znovu se podívat do mřížky');
 
-    // lifeguard chair
-    const pole = this._box(0.15, 2.8, 0.15, this._matMetal(), 5, 1.4, -7);
-    const seat = this._box(1.1, 0.15, 1.1, this._matMetal(0xcc5533), 5, 2.7, -7);
+    // lifeguard tower — ladder + platform + seat + umbrella
+    this._cyl(0.12, 0.14, 2.9, this._matMetal(0x8899aa), 5, 1.45, -7);
+    this._box(0.08, 2.4, 0.08, this._matMetal(0x667788), 4.55, 1.2, -7, { collide: false });
+    for (let i = 0; i < 7; i++) {
+      this._box(0.42, 0.04, 0.06, this._matMetal(0x8899aa), 4.78, 0.35 + i * 0.32, -7, { collide: false });
+    }
+    this._box(1.35, 0.08, 1.35, this._matMetal(0x556677), 5, 2.65, -7, { collide: false });
+    const seat = this._box(0.95, 0.12, 0.95, new THREE.MeshStandardMaterial({ color: 0xc84828, roughness: 0.55 }), 5, 2.78, -7);
+    this._box(0.95, 0.55, 0.1, new THREE.MeshStandardMaterial({ color: 0xa83820, roughness: 0.55 }), 5, 3.1, -7.4, { collide: false });
+    this._cyl(0.04, 0.04, 1.1, this._matMetal(), 5, 3.5, -7);
+    const umbrella = new THREE.Mesh(
+      new THREE.ConeGeometry(0.95, 0.35, 12),
+      new THREE.MeshStandardMaterial({ color: 0xd0d8e0, roughness: 0.7, side: THREE.DoubleSide }),
+    );
+    umbrella.position.set(5, 4.05, -7);
+    this.group.add(umbrella);
     this._interact(seat, 'wave_lifeguard_chair', 'Prohledat plavčíkovu kukaň');
+
+    // starting blocks
+    for (let i = 0; i < 3; i++) {
+      this._box(0.55, 0.45, 0.7, this._matMetal(0xffffff), -2 + i * 2, 0.55, -4.6, { collide: false });
+      this._box(0.45, 0.08, 0.35, new THREE.MeshStandardMaterial({ color: 0x2266aa }), -2 + i * 2, 0.8, -4.55, { collide: false });
+    }
 
     const cam = this._box(0.4, 0.3, 0.5, this._matMetal(0x333333), 0, 3.5, -5, { collide: false });
     this._interact(cam, 'wave_photo', 'Vyfotit bazén pro pojišťovnu');
@@ -631,20 +698,34 @@ export class World {
     this._box(0.3, 3.8, 12, wall, 1, 1.9, -28);
     this._box(0.3, 3.8, 12, wall, 15, 1.9, -28);
     this._lamp(8, 3.4, -28, 0xffe0a0, 3.0);
+    this._lamp(4, 3.2, -30, 0xffb0c8, 1.6, 0.25);
+    this._lamp(12, 3.2, -26, 0xb0e0ff, 1.6, 0.25);
 
-    // shallow fountain
-    const bowl = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.6, 1.8, 0.4, 24),
-      this._matTile(),
-    );
-    bowl.position.set(8, 0.2, -28);
-    this.group.add(bowl);
+    // mushroom fountain
+    const bowl = this._cyl(1.7, 1.9, 0.35, this._matTile(), 8, 0.2, -28);
+    this._cyl(0.22, 0.28, 0.9, new THREE.MeshStandardMaterial({ color: 0xe8e0d0 }), 8, 0.7, -28);
+    this._cyl(0.85, 0.55, 0.28, new THREE.MeshStandardMaterial({ color: 0xd04050, roughness: 0.45 }), 8, 1.2, -28);
     this._interact(bowl, 'kids_fountain', 'Sáhnout do misky fontánky');
 
-    const drawings = this._box(3, 1.4, 0.05, new THREE.MeshStandardMaterial({ color: 0xf0e6d0 }), 8, 1.8, -22.2);
+    // mini plastic slide
+    this._box(0.9, 0.12, 2.4, new THREE.MeshStandardMaterial({ color: 0xf0c020, roughness: 0.4 }), 4.2, 0.85, -30.5, { collide: false, rotY: 0.2 });
+    this._box(0.12, 1.1, 0.12, new THREE.MeshStandardMaterial({ color: 0x2080c0 }), 3.7, 0.55, -29.5, { collide: false });
+    this._box(0.12, 1.1, 0.12, new THREE.MeshStandardMaterial({ color: 0x2080c0 }), 4.7, 0.55, -29.5, { collide: false });
+    this._box(0.12, 0.5, 0.12, new THREE.MeshStandardMaterial({ color: 0x2080c0 }), 3.75, 0.3, -31.4, { collide: false });
+    this._box(0.12, 0.5, 0.12, new THREE.MeshStandardMaterial({ color: 0x2080c0 }), 4.65, 0.3, -31.4, { collide: false });
+
+    const drawings = this._box(3.2, 1.5, 0.05, new THREE.MeshStandardMaterial({ color: 0xf5ecd8 }), 8, 1.85, -22.2);
+    // crayon blotches on board
+    for (let i = 0; i < 8; i++) {
+      this._box(0.35, 0.3, 0.02, new THREE.MeshStandardMaterial({
+        color: new THREE.Color().setHSL(i / 8, 0.7, 0.55),
+      }), 6.8 + (i % 4) * 0.7, 1.5 + Math.floor(i / 4) * 0.55, -22.16, { collide: false });
+    }
     this._interact(drawings, 'kids_drawings', 'Prohlédnout dětské obrázky');
 
     const cabinet = this._box(1.4, 1.8, 0.6, this._matMetal(0x556677), 12, 0.9, -32);
+    this._box(1.2, 0.05, 0.55, this._matMetal(0x33444a), 12, 1.2, -32, { collide: false });
+    this._box(0.08, 0.25, 0.04, this._matMetal(0xccddee), 12.55, 1.0, -31.68, { collide: false });
     this._interact(cabinet, 'kids_cabinet', 'Prohledat skříň animátorů');
     const cabinetEarly = this._box(1.2, 0.4, 0.4, this._matMetal(0x445566), 12, 2.0, -32);
     this._interact(cabinetEarly, 'kids_cabinet_early', 'Prohledat skříň (navíc)');
@@ -654,13 +735,17 @@ export class World {
     this._interact(this._box(1.6, 2.1, 0.1, this._matMetal(), 14.7, 1.05, -30), 'tower', 'Na tobogánovou věž', 'exit');
     this._interact(this._box(1.6, 2.1, 0.1, this._matMetal(0x886655), 8, 1.05, -33.8), 'wellness', 'K wellness', 'exit');
 
-    // toys
+    // soft-play cubes + balls
+    const cubeCols = [0xe05050, 0x40a0e0, 0xf0c020, 0x50c070];
+    for (let i = 0; i < 4; i++) {
+      this._box(0.45, 0.45, 0.45, new THREE.MeshStandardMaterial({ color: cubeCols[i], roughness: 0.7 }), 5.5 + i * 0.55, 0.25, -25.5, { collide: false });
+    }
     for (let i = 0; i < 6; i++) {
       const toy = new THREE.Mesh(
         new THREE.SphereGeometry(0.18, 12, 12),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(i / 6, 0.6, 0.5) }),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(i / 6, 0.65, 0.52) }),
       );
-      toy.position.set(5 + i * 0.7, 0.2, -26);
+      toy.position.set(5 + i * 0.7, 0.2, -26.8);
       this.group.add(toy);
     }
   }
@@ -668,16 +753,43 @@ export class World {
   _wellness() {
     this.zoneMarkers.wellness = new THREE.Vector3(8, 1.65, -40);
     const wall = this._matConcrete();
-    this._floor(10, 8, 0.01, new THREE.MeshStandardMaterial({ color: 0x2a1e16, roughness: 0.85 }), 8, -40);
+    const wood = new THREE.MeshStandardMaterial({ color: 0x6a4228, roughness: 0.82 });
+    this._floor(10, 8, 0.01, new THREE.MeshStandardMaterial({ color: 0x1e140e, roughness: 0.9 }), 8, -40);
     this._box(10, 3.5, 0.3, wall, 8, 1.75, -36);
     this._box(10, 3.5, 0.3, wall, 8, 1.75, -44);
     this._box(0.3, 3.5, 8, wall, 3, 1.75, -40);
     this._box(0.3, 3.5, 8, wall, 13, 1.75, -40);
+    this._box(10, 0.25, 8, new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 0.95 }), 8, 3.4, -40, { collide: false });
+    this._lamp(8, 3.2, -40, 0xff8844, 1.8, 0.3);
+    this._lamp(5, 2.4, -42, 0xff6622, 0.9, 0.2);
 
-    const bench = this._box(3.5, 0.35, 0.55, new THREE.MeshStandardMaterial({ color: 0x5a3a22 }), 8, 0.5, -40);
+    // tiered sauna benches
+    this._box(4.2, 0.12, 0.7, wood, 8, 0.45, -41.2);
+    this._box(4.2, 0.12, 0.7, wood, 8, 0.95, -42.0);
+    this._box(4.2, 0.12, 0.7, wood, 8, 1.45, -42.8);
+    const bench = this._box(3.5, 0.35, 0.55, wood, 8, 0.5, -39.5);
     this._interact(bench, 'well_break', 'Strhnout pásku a vejít / prohledat saunu');
 
-    const phone = this._box(0.25, 0.45, 0.12, this._matMetal(0x222222), 7, 0.85, -40);
+    // heater + stones
+    this._box(0.7, 0.85, 0.55, this._matMetal(0x333333), 5.2, 0.45, -42.5);
+    for (let i = 0; i < 7; i++) {
+      this._cyl(0.08 + (i % 3) * 0.02, 0.1, 0.08, new THREE.MeshStandardMaterial({ color: 0x555560, roughness: 0.9 }), 5.0 + (i % 3) * 0.14, 0.95, -42.35 - Math.floor(i / 3) * 0.14);
+    }
+    const heaterGlow = new THREE.PointLight(0xff5522, 1.2, 5, 2);
+    heaterGlow.position.set(5.2, 0.9, -42.5);
+    this.group.add(heaterGlow);
+    this.dynamicLights.push(heaterGlow);
+
+    // caution tape across door
+    for (let i = 0; i < 5; i++) {
+      this._box(1.6, 0.06, 0.02, new THREE.MeshStandardMaterial({
+        color: i % 2 ? 0x111111 : 0xe8a010,
+        roughness: 0.5,
+      }), 8, 1.1 + i * 0.12, -36.35, { collide: false });
+    }
+
+    const phone = this._box(0.18, 0.38, 0.08, this._matMetal(0x1a1a22), 7, 0.85, -39.6);
+    this._box(0.12, 0.08, 0.02, new THREE.MeshStandardMaterial({ color: 0x334422, emissive: 0x223311, emissiveIntensity: 0.4 }), 7, 0.95, -39.55, { collide: false });
     this._interact(phone, 'well_phone', 'Poslechnout hlasovky na Nokii');
 
     this._interact(this._box(1.5, 2.1, 0.1, this._matMetal(), 8, 1.05, -36.2), 'kids', 'Zpět do dětského klubu', 'exit');
@@ -765,7 +877,7 @@ export class World {
       this.group.add(flange);
     }
 
-    // valves A B C D
+    // valves A B C D — wheel handles, not cubes
     const valves = [
       ['valve_a', 'Otočit ventil A', -3],
       ['valve_b', 'Otočit ventil B', -1],
@@ -774,8 +886,22 @@ export class World {
       ['valve_d', 'Zavřít bypass D a odejít', 3.5],
     ];
     for (const [id, label, x] of valves) {
-      const v = this._box(0.5, 0.5, 0.35, this._matMetal(0xcc3333), x, -1.5, -12);
-      this._interact(v, id, label);
+      const stem = this._cyl(0.08, 0.1, 0.55, this._matMetal(0x8899aa), x, -1.55, -12);
+      const wheel = new THREE.Mesh(
+        new THREE.TorusGeometry(0.28, 0.05, 8, 18),
+        this._matMetal(0xc03030),
+      );
+      wheel.position.set(x, -1.2, -12);
+      wheel.rotation.x = Math.PI / 2;
+      this.group.add(wheel);
+      // hub + spokes
+      this._cyl(0.07, 0.07, 0.08, this._matMetal(0xaa2222), x, -1.2, -12);
+      for (let s = 0; s < 4; s++) {
+        const spoke = this._box(0.42, 0.04, 0.04, this._matMetal(0xaa3333), x, -1.2, -12, { collide: false });
+        spoke.rotation.z = (s * Math.PI) / 4;
+      }
+      this._interact(stem, id, label);
+      // also mark wheel as same interact via stem only — attach marker height via stem
     }
 
     const panel = this._box(1.2, 1.8, 0.25, this._matMetal(0x334455), -4.5, -2.2, -17);

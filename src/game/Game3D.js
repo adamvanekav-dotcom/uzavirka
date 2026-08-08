@@ -21,7 +21,7 @@ export class Game3D {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
@@ -53,7 +53,7 @@ export class Game3D {
     envScene.add(e2);
     this.scene.environment = pmrem.fromScene(envScene, 0.04).texture;
     pmrem.dispose();
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = 1.08;
 
     this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;

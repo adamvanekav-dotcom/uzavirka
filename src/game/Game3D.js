@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { World } from './world/World.js';
 import { Player3D } from './player/Player3D.js';
 import { createOverlayPass } from './world/overlay.js';
@@ -21,39 +22,17 @@ export class Game3D {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.95;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.08, 120);
+    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.08, 140);
 
-    this.world = new World(this.scene).build();
+    this.world = new World(this.scene);
     this.player = new Player3D(this.camera, this.scene, audio);
-    this.player.setColliders(this.world.colliders);
-    this.player.position.copy(this.world.zoneMarkers.lobby);
-    this.player.euler.set(0, Math.PI, 0);
-    this.player.syncCamera();
     this.overlayMat = createOverlayPass(this.camera);
 
-    // Environment reflections for wet tiles / metal
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    const envScene = new THREE.Scene();
-    envScene.background = new THREE.Color(0x102838);
-    envScene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const e1 = new THREE.Mesh(
-      new THREE.SphereGeometry(8, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0x4ad0e0, side: THREE.BackSide }),
-    );
-    envScene.add(e1);
-    const e2 = new THREE.Mesh(
-      new THREE.SphereGeometry(3, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0xffcc88 }),
-    );
-    e2.position.set(4, -2, -3);
-    envScene.add(e2);
-    this.scene.environment = pmrem.fromScene(envScene, 0.04).texture;
-    pmrem.dispose();
-    this.renderer.toneMappingExposure = 1.08;
+    this.ready = this._boot();
 
     this._onResize = () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -83,7 +62,7 @@ export class Game3D {
     this._loop = () => {
       this._raf = requestAnimationFrame(this._loop);
       const dt = Math.min(0.05, this.clock.getDelta());
-      if (this.active) {
+      if (this.active && this.world.zoneMarkers.lobby) {
         this.player.update(dt, this.world.interactables);
         this.world.update(this.clock.elapsedTime, this.engine.state.tension, this.player.position, this.engine);
         if (this.overlayMat) {
@@ -98,11 +77,26 @@ export class Game3D {
     this._loop();
   }
 
-  start() {
+  async _boot() {
+    const hdr = await new RGBELoader().loadAsync('/textures/night.hdr');
+    hdr.mapping = THREE.EquirectangularReflectionMapping;
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromEquirectangular(hdr).texture;
+    hdr.dispose();
+    pmrem.dispose();
+
+    this.world.mats.aniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+    await this.world.load();
+    this.player.setColliders(this.world.colliders);
+    this.player.position.copy(this.world.zoneMarkers.lobby);
+    this.player.euler.set(0, Math.PI, 0);
+    this.player.syncCamera();
+  }
+
+  async start() {
+    await this.ready;
     this.active = true;
-    const loc = this.engine.state.location || 'lobby';
     if (this.engine.state.location === 'parking') {
-      // soft start inside visible lobby for first paint
       this.engine.state.location = 'lobby';
     }
     this.world.teleportPlayer(this.player, this.engine.state.location || 'lobby');
@@ -133,15 +127,11 @@ export class Game3D {
     if (!h) return null;
     const { interactId, interactKind } = h.userData;
     if (interactKind === 'exit') {
-      // respect story exit gates when possible
       const loc = this.engine.story.locations[this.engine.state.location];
       const exit = (loc?.exits || []).find((e) => e.to === interactId);
       if (exit) {
         if (exit.requireFlag && !this.engine.flag(exit.requireFlag)) {
-          return {
-            title: 'Zamčeno',
-            body: 'Tudy ještě nemůžeš. Nejdřív splň úkol v této zóně.',
-          };
+          return { title: 'Zamčeno', body: 'Tudy ještě nemůžeš. Nejdřív splň úkol v této zóně.' };
         }
         if (exit.requireItem && !this.engine.has(exit.requireItem)) {
           return {
@@ -150,7 +140,6 @@ export class Game3D {
           };
         }
       } else {
-        // allow free roam between connected zones if story exit not listed from current — soft gate
         const softGates = {
           wavepool: () => this.engine.flag('turnstile_ok'),
           lockers: () => this.engine.flag('got_badge'),
@@ -174,13 +163,9 @@ export class Game3D {
       return { silent: true };
     }
 
-    // story action
     const result = this.engine.doAction(interactId);
     if (!result) {
-      return {
-        title: 'Nic',
-        body: 'Teď to nefunguje — možná chybí předmět, nebo už je hotovo.',
-      };
+      return { title: 'Nic', body: 'Teď to nefunguje — možná chybí předmět, nebo už je hotovo.' };
     }
     if (result.go) this.world.teleportPlayer(this.player, result.go);
     if (interactId === 'lobby_batteries_fix' || result.item === 'batteries') {

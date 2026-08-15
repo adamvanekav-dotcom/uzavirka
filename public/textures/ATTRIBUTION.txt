@@ -1,0 +1,5 @@
+CC0 textures
+Poly Haven (https://polyhaven.com): floor_tiles_06, painted_plaster_wall,
+concrete_floor_02, concrete_wall_003, metal_plate, wood_planks, asphalt_02,
+rusty_metal_02, dikhololo_night HDRI.
+ambientCG (https://ambientcg.com): Tiles142, Tiles074.

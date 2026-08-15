@@ -59,12 +59,12 @@ export function createUI(root, engine, audio, api = {}) {
       audio.resume();
       engine.clearSave();
       engine.startFresh();
-      enterGame();
+      await enterGame();
     });
     root.querySelector('[data-act="continue"]')?.addEventListener('click', async () => {
       await audio.init();
       audio.resume();
-      if (engine.continueSave()) enterGame();
+      if (engine.continueSave()) await enterGame();
     });
     root.querySelector('[data-act="about"]')?.addEventListener('click', () => {
       modal = {
@@ -80,7 +80,7 @@ Fiktivní park.`,
     });
   }
 
-  function enterGame() {
+  async function enterGame() {
     screen = 'game';
     patched = false;
     renderGame(true);
@@ -91,7 +91,7 @@ Fiktivní park.`,
       updateHudLive();
     };
     patchInteract(g);
-    g.start();
+    await g.start();
   }
 
   let patched = false;
